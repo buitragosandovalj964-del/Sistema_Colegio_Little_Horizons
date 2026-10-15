@@ -1,0 +1,12 @@
+# Maven build output
+target/
+
+# NetBeans private settings
+nbproject/private/
+nbactions.xml
+
+# Logs
+error_log.txt
+
+# Database credentials (we create this file in Phase 2)
+db.properties
