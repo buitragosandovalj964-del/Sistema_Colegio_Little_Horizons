@@ -1,6 +1,7 @@
 package com.littlehorizons.erp;
 
 import com.littlehorizons.erp.util.DatabaseConnection;
+import com.littlehorizons.erp.util.ErrorLogger;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -12,7 +13,8 @@ public class Main {
             System.out.println("Database: " + connection.getCatalog());
             System.out.println("User: " + connection.getMetaData().getUserName());
         } catch (SQLException e) {
-            System.out.println("Connection failed: " + e.getMessage());
+            ErrorLogger.log("Testing database connection", e);
+            System.out.println("Connection failed. See error_log.txt for details.");
         }
     }
 }
