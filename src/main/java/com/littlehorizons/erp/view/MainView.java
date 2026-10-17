@@ -17,10 +17,10 @@ public class MainView {
 
     public int showMenuAndReadOption() {
         System.out.println();
-        System.out.println("╔" + "═".repeat(BOX_WIDTH) + "╗");
-        System.out.printf("║%-" + BOX_WIDTH + "s║%n", "   ERP Colegio Little Horizons");
-        System.out.printf("║%-" + BOX_WIDTH + "s║%n", "   Sistema de Gestión Educativa");
-        System.out.println("╚" + "═".repeat(BOX_WIDTH) + "╝");
+        System.out.println("+" + "=".repeat(BOX_WIDTH) + "+");
+        System.out.printf("|%-" + BOX_WIDTH + "s|%n", "   ERP Colegio Little Horizons");
+        System.out.printf("|%-" + BOX_WIDTH + "s|%n", "   Sistema de Gestión Educativa");
+        System.out.println("+" + "=".repeat(BOX_WIDTH) + "+");
         System.out.println();
         System.out.println("1. Gestión de Estudiantes");
         System.out.println("2. Gestión Académica");

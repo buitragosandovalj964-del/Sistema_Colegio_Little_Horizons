@@ -16,10 +16,16 @@ public class StudentController {
 
     private final StudentService studentService;
     private final StudentView studentView;
+    private final GuardianController guardianController;
+    private final StudentGuardianController studentGuardianController;
 
-    public StudentController(StudentService studentService, StudentView studentView) {
+    public StudentController(StudentService studentService, StudentView studentView,
+            GuardianController guardianController,
+            StudentGuardianController studentGuardianController) {
         this.studentService = studentService;
         this.studentView = studentView;
+        this.guardianController = guardianController;
+        this.studentGuardianController = studentGuardianController;
     }
 
     private interface Operation {
@@ -37,6 +43,8 @@ public class StudentController {
                 case 4 -> execute(this::updateStudent);
                 case 5 -> execute(this::withdrawStudent);
                 case 6 -> execute(this::deleteStudent);
+                case 7 -> guardianController.run();
+                case 8 -> studentGuardianController.run();
                 case 0 -> running = false;
                 default -> studentView.showError("Opción inválida.");
             }
@@ -61,14 +69,25 @@ public class StudentController {
         Student student = studentView.askNewStudent();
         studentService.registerStudent(student);
         studentView.showMessage("Estudiante registrado con id " + student.getId() + ".");
+        if (studentView.confirm("¿Desea vincular ahora un acudiente a este estudiante?")) {
+            try {
+                studentGuardianController.linkGuardiansInteractively(student);
+            } catch (ConsoleInput.CancelledException e) {
+                studentView.showMessage("Vínculo cancelado. El estudiante quedó registrado "
+                        + "sin acudiente; puede vincularlo después desde la opción 8.");
+            }
+        }
     }
 
     private void listStudents() throws SQLException {
-        studentView.showStudentList(studentService.listStudents());
+        studentView.showStudentList(studentService.listStudents(),
+                studentGuardianController.findStudentIdsWithoutGuardian());
     }
 
     private void searchStudent() throws ValidationException, SQLException {
-        studentView.showStudentDetail(findStudentFromUser());
+        Student student = findStudentFromUser();
+        studentView.showStudentDetail(student);
+        studentGuardianController.showGuardiansOf(student);
     }
 
     private void updateStudent() throws ValidationException, SQLException {

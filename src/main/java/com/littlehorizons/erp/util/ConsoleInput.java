@@ -1,5 +1,6 @@
 package com.littlehorizons.erp.util;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -20,6 +21,10 @@ public class ConsoleInput {
             "Solo se permiten letras, espacios, guiones y apóstrofes (sin números).";
     private static final String DATE_ERROR =
             "Fecha inválida. Use el formato aaaa-mm-dd, por ejemplo 2014-05-12.";
+    private static final String EMAIL_PATTERN = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$";
+    private static final String EMAIL_ERROR =
+            "Correo no válido. Use el formato nombre@correo.com.";
+    private static final String YES_NO_ERROR = "Responda si o no.";
 
     private final Scanner scanner = new Scanner(System.in);
 
@@ -82,7 +87,7 @@ public class ConsoleInput {
         while (true) {
             String text = readRequiredText(prompt);
             if (text.matches(NAME_PATTERN)) {
-                return text;
+                return formatName(text);
             }
             showError(NAME_ERROR);
         }
@@ -95,7 +100,7 @@ public class ConsoleInput {
                 return null;
             }
             if (text.matches(NAME_PATTERN)) {
-                return text;
+                return formatName(text);
             }
             showError(NAME_ERROR);
         }
@@ -108,9 +113,19 @@ public class ConsoleInput {
                 return current;
             }
             if (text.matches(NAME_PATTERN)) {
-                return text;
+                return formatName(text);
             }
             showError(NAME_ERROR);
+        }
+    }
+
+    public String readRequiredPhone(String prompt, int minLength, int maxLength) {
+        while (true) {
+            String text = readRequiredText(prompt);
+            if (isValidPhone(text, minLength, maxLength)) {
+                return text;
+            }
+            showError(phoneErrorMessage(minLength, maxLength));
         }
     }
 
@@ -138,6 +153,32 @@ public class ConsoleInput {
                 return text;
             }
             showError(phoneErrorMessage(minLength, maxLength));
+        }
+    }
+
+    public String readOptionalEmail(String prompt) {
+        while (true) {
+            String text = readLine(prompt + " (opcional): ");
+            if (text.isEmpty()) {
+                return null;
+            }
+            if (text.matches(EMAIL_PATTERN)) {
+                return text;
+            }
+            showError(EMAIL_ERROR);
+        }
+    }
+
+    public String readEmailKeepingCurrent(String label, String current) {
+        while (true) {
+            String text = readLine(label + " [" + orEmpty(current) + "]: ");
+            if (text.isEmpty()) {
+                return current;
+            }
+            if (text.matches(EMAIL_PATTERN)) {
+                return text;
+            }
+            showError(EMAIL_ERROR);
         }
     }
 
@@ -192,17 +233,48 @@ public class ConsoleInput {
         }
     }
 
-    public boolean confirm(String question) {
+    public boolean readYesNo(String prompt) {
+        return askYesNo(prompt + " (si/no): ", true);
+    }
+
+    public boolean readYesNoKeepingCurrent(String label, boolean current) {
         while (true) {
-            String text = readRaw(question + " (si/no): ").toLowerCase();
-            if (text.equals("si") || text.equals("sí")) {
-                return true;
+            String text = readLine(label + " [" + (current ? "si" : "no") + "] (si/no): ");
+            if (text.isEmpty()) {
+                return current;
             }
-            if (text.equals("no")) {
-                return false;
+            Optional<Boolean> answer = parseYesNo(text);
+            if (answer.isPresent()) {
+                return answer.get();
             }
-            showError("Responda si o no.");
+            showError(YES_NO_ERROR);
         }
+    }
+
+    public boolean confirm(String question) {
+        return askYesNo(question + " (si/no): ", false);
+    }
+
+    private boolean askYesNo(String fullPrompt, boolean allowCancel) {
+        while (true) {
+            String text = allowCancel ? readLine(fullPrompt) : readRaw(fullPrompt);
+            Optional<Boolean> answer = parseYesNo(text);
+            if (answer.isPresent()) {
+                return answer.get();
+            }
+            showError(YES_NO_ERROR);
+        }
+    }
+
+    private Optional<Boolean> parseYesNo(String text) {
+        String normalized = withoutAccents(text);
+        if (normalized.equalsIgnoreCase("si")) {
+            return Optional.of(true);
+        }
+        if (normalized.equalsIgnoreCase("no")) {
+            return Optional.of(false);
+        }
+        return Optional.empty();
     }
 
     private String readLine(String prompt) {
@@ -219,9 +291,27 @@ public class ConsoleInput {
     }
 
     private Optional<String> findOption(String text, List<String> options) {
+        String wanted = withoutAccents(text);
         return options.stream()
-                .filter(option -> option.equalsIgnoreCase(text))
+                .filter(option -> withoutAccents(option).equalsIgnoreCase(wanted))
                 .findFirst();
+    }
+
+    private String withoutAccents(String text) {
+        return Normalizer.normalize(text, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+    }
+
+    /**
+     * Capitalizes the first letter of each word (also after hyphens and apostrophes).
+     */
+    private String formatName(String name) {
+        StringBuilder result = new StringBuilder();
+        boolean startOfWord = true;
+        for (char character : name.toLowerCase().toCharArray()) {
+            result.append(startOfWord ? Character.toUpperCase(character) : character);
+            startOfWord = character == ' ' || character == '-' || character == '\'';
+        }
+        return result.toString();
     }
 
     private boolean isValidPhone(String text, int minLength, int maxLength) {
@@ -236,4 +326,4 @@ public class ConsoleInput {
     private String orEmpty(String value) {
         return value == null ? "" : value;
     }
-}   
+}

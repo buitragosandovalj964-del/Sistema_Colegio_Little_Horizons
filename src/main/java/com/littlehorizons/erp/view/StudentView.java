@@ -4,6 +4,7 @@ import com.littlehorizons.erp.model.Student;
 import com.littlehorizons.erp.service.StudentService;
 import com.littlehorizons.erp.util.ConsoleInput;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Console screens for student management: asks for data and shows results.
@@ -33,6 +34,8 @@ public class StudentView {
         System.out.println("4. Actualizar estudiante");
         System.out.println("5. Retirar estudiante");
         System.out.println("6. Eliminar estudiante (registros creados por error)");
+        System.out.println("7. Gestión de acudientes");
+        System.out.println("8. Vínculos estudiante-acudiente");
         System.out.println("0. Volver al menú principal");
         return input.readMenuOption("Seleccione una opción: ");
     }
@@ -54,7 +57,7 @@ public class StudentView {
         student.setAddress(input.readOptionalText("Dirección"));
         student.setPhone(input.readOptionalPhone("Teléfono",
                 StudentService.PHONE_MIN_LENGTH, StudentService.PHONE_MAX_LENGTH));
-        student.setEmail(input.readOptionalText("Correo electrónico"));
+        student.setEmail(input.readOptionalEmail("Correo electrónico"));
         student.setBloodType(input.readOptionalText("Tipo de sangre"));
         student.setAllergies(input.readOptionalText("Alergias"));
         student.setMedicalConditions(input.readOptionalText("Condiciones médicas"));
@@ -79,7 +82,7 @@ public class StudentView {
         student.setAddress(input.readTextKeepingCurrent("Dirección", student.getAddress()));
         student.setPhone(input.readPhoneKeepingCurrent("Teléfono", student.getPhone(),
                 StudentService.PHONE_MIN_LENGTH, StudentService.PHONE_MAX_LENGTH));
-        student.setEmail(input.readTextKeepingCurrent(
+        student.setEmail(input.readEmailKeepingCurrent(
                 "Correo electrónico", student.getEmail()));
         student.setBloodType(input.readTextKeepingCurrent(
                 "Tipo de sangre", student.getBloodType()));
@@ -107,16 +110,17 @@ public class StudentView {
         input.showError(message);
     }
 
-    public void showStudentList(List<Student> students) {
+    public void showStudentList(List<Student> students, Set<Integer> idsWithoutGuardian) {
         if (students.isEmpty()) {
             showMessage("No hay estudiantes registrados.");
             return;
         }
-        System.out.printf("%-5s %-10s %-14s %-38s %-10s%n",
-                "ID", "TIPO", "DOCUMENTO", "NOMBRE", "ESTADO");
-        students.forEach(student -> System.out.printf("%-5d %-10s %-14s %-38s %-10s%n",
+        System.out.printf("%-5s %-10s %-14s %-38s %-10s %-14s%n",
+                "ID", "TIPO", "DOCUMENTO", "NOMBRE", "ESTADO", "ACUDIENTE");
+        students.forEach(student -> System.out.printf("%-5d %-10s %-14s %-38s %-10s %-14s%n",
                 student.getId(), student.getDocumentType(), student.getDocumentNumber(),
-                student.getFullName(), student.getStatus()));
+                student.getFullName(), student.getStatus(),
+                idsWithoutGuardian.contains(student.getId()) ? "SIN ACUDIENTE" : "Sí"));
     }
 
     public void showStudentDetail(Student student) {
