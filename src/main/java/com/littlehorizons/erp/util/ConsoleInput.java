@@ -156,6 +156,16 @@ public class ConsoleInput {
         }
     }
 
+    public String readRequiredEmail(String prompt) {
+        while (true) {
+            String text = readRequiredText(prompt);
+            if (text.matches(EMAIL_PATTERN)) {
+                return text;
+            }
+            showError(EMAIL_ERROR);
+        }
+    }
+
     public String readOptionalEmail(String prompt) {
         while (true) {
             String text = readLine(prompt + " (opcional): ");

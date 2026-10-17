@@ -4,14 +4,17 @@ import com.littlehorizons.erp.controller.GuardianController;
 import com.littlehorizons.erp.controller.MainController;
 import com.littlehorizons.erp.controller.StudentController;
 import com.littlehorizons.erp.controller.StudentGuardianController;
+import com.littlehorizons.erp.controller.TeacherController;
 import com.littlehorizons.erp.service.GuardianService;
 import com.littlehorizons.erp.service.StudentGuardianService;
 import com.littlehorizons.erp.service.StudentService;
+import com.littlehorizons.erp.service.TeacherService;
 import com.littlehorizons.erp.util.ConsoleInput;
 import com.littlehorizons.erp.view.GuardianView;
 import com.littlehorizons.erp.view.MainView;
 import com.littlehorizons.erp.view.StudentGuardianView;
 import com.littlehorizons.erp.view.StudentView;
+import com.littlehorizons.erp.view.TeacherView;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
@@ -34,8 +37,10 @@ public class Main {
         StudentController studentController = new StudentController(
                 studentService, new StudentView(input), guardianController,
                 studentGuardianController);
-        MainController mainController =
-                new MainController(new MainView(input), studentController);
+        TeacherController teacherController =
+                new TeacherController(new TeacherService(), new TeacherView(input));
+        MainController mainController = new MainController(
+                new MainView(input), studentController, teacherController);
 
         mainController.run();
         System.out.println("Hasta pronto.");
