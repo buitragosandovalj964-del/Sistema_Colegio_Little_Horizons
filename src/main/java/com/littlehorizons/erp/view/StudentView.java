@@ -1,25 +1,26 @@
 package com.littlehorizons.erp.view;
 
 import com.littlehorizons.erp.model.Student;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
+import com.littlehorizons.erp.service.StudentService;
+import com.littlehorizons.erp.util.ConsoleInput;
 import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
 
 /**
- * Console screens for student management. It only reads input and prints output.
+ * Console screens for student management: asks for data and shows results.
  * Everything shown to the user is in Spanish.
  */
 public class StudentView {
 
-    private static final String DATE_ERROR =
-            "Fecha inválida. Use el formato aaaa-mm-dd, por ejemplo 2014-05-12.";
-    private static final String NAME_PATTERN = "\\p{L}+([ '\\-]\\p{L}+)*";
-    private static final String NAME_ERROR =
-            "Solo se permiten letras, espacios, guiones y apóstrofes (sin números).";
+    /**
+     * Identifies a student by document, as typed by the user.
+     */
+    public record DocumentId(String type, String number) { }
 
-    private final Scanner scanner = new Scanner(System.in);
+    private final ConsoleInput input;
+
+    public StudentView(ConsoleInput input) {
+        this.input = input;
+    }
 
     public int showMenuAndReadOption() {
         System.out.println();
@@ -32,189 +33,70 @@ public class StudentView {
         System.out.println("4. Actualizar estudiante");
         System.out.println("5. Retirar estudiante");
         System.out.println("6. Eliminar estudiante (registros creados por error)");
-        System.out.println("0. Salir");
-        return readInt("Seleccione una opción: ");
+        System.out.println("0. Volver al menú principal");
+        return input.readMenuOption("Seleccione una opción: ");
     }
 
-    public int readInt(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String input = scanner.nextLine().trim();
-            try {
-                return Integer.parseInt(input);
-            } catch (NumberFormatException e) {
-                showError("Por favor ingrese un número válido.");
-            }
-        }
+    public Student askNewStudent() {
+        showMessage("Escriba '" + ConsoleInput.CANCEL_WORD
+                + "' en cualquier momento para volver al menú.");
+        Student student = new Student();
+        student.setDocumentType(input.readChoice(
+                "Tipo de documento", StudentService.DOCUMENT_TYPES));
+        student.setDocumentNumber(input.readRequiredText(
+                "Número de documento: ", StudentService.MAX_DOCUMENT_NUMBER_LENGTH));
+        student.setFirstName(input.readRequiredName("Primer nombre: "));
+        student.setMiddleName(input.readOptionalName("Segundo nombre"));
+        student.setFirstLastName(input.readRequiredName("Primer apellido: "));
+        student.setSecondLastName(input.readOptionalName("Segundo apellido"));
+        student.setBirthDate(input.readDate("Fecha de nacimiento"));
+        student.setGender(input.readChoice("Género", StudentService.GENDERS));
+        student.setAddress(input.readOptionalText("Dirección"));
+        student.setPhone(input.readOptionalPhone("Teléfono",
+                StudentService.PHONE_MIN_LENGTH, StudentService.PHONE_MAX_LENGTH));
+        student.setEmail(input.readOptionalText("Correo electrónico"));
+        student.setBloodType(input.readOptionalText("Tipo de sangre"));
+        student.setAllergies(input.readOptionalText("Alergias"));
+        student.setMedicalConditions(input.readOptionalText("Condiciones médicas"));
+        student.setAdmissionDate(input.readDate("Fecha de ingreso"));
+        return student;
     }
 
-    public String readRequiredText(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String input = scanner.nextLine().trim();
-            if (!input.isEmpty()) {
-                return input;
-            }
-            showError("Este campo es obligatorio.");
-        }
+    public void askStudentChanges(Student student) {
+        showMessage("Presione Enter para conservar el valor actual. Escriba '"
+                + ConsoleInput.CANCEL_WORD + "' para volver al menú.");
+        student.setFirstName(input.readNameKeepingCurrent("Primer nombre", student.getFirstName()));
+        student.setMiddleName(input.readNameKeepingCurrent(
+                "Segundo nombre", student.getMiddleName()));
+        student.setFirstLastName(input.readNameKeepingCurrent(
+                "Primer apellido", student.getFirstLastName()));
+        student.setSecondLastName(input.readNameKeepingCurrent(
+                "Segundo apellido", student.getSecondLastName()));
+        student.setBirthDate(input.readDateKeepingCurrent(
+                "Fecha de nacimiento", student.getBirthDate()));
+        student.setGender(input.readChoiceKeepingCurrent(
+                "Género", student.getGender(), StudentService.GENDERS));
+        student.setAddress(input.readTextKeepingCurrent("Dirección", student.getAddress()));
+        student.setPhone(input.readPhoneKeepingCurrent("Teléfono", student.getPhone(),
+                StudentService.PHONE_MIN_LENGTH, StudentService.PHONE_MAX_LENGTH));
+        student.setEmail(input.readTextKeepingCurrent(
+                "Correo electrónico", student.getEmail()));
+        student.setBloodType(input.readTextKeepingCurrent(
+                "Tipo de sangre", student.getBloodType()));
+        student.setAllergies(input.readTextKeepingCurrent("Alergias", student.getAllergies()));
+        student.setMedicalConditions(input.readTextKeepingCurrent(
+                "Condiciones médicas", student.getMedicalConditions()));
     }
 
-    public String readRequiredText(String prompt, int maxLength) {
-        while (true) {
-            String input = readRequiredText(prompt);
-            if (input.length() <= maxLength) {
-                return input;
-            }
-            showError("Máximo " + maxLength + " caracteres (ingresó " + input.length() + ").");
-        }
-    }
-
-    public String readOptionalText(String prompt) {
-        System.out.print(prompt + " (opcional): ");
-        String input = scanner.nextLine().trim();
-        return input.isEmpty() ? null : input;
-    }
-
-    public String readTextKeepingCurrent(String label, String current) {
-        System.out.print(label + " [" + (current == null ? "" : current) + "]: ");
-        String input = scanner.nextLine().trim();
-        return input.isEmpty() ? current : input;
-    }
-
-    public String readRequiredName(String prompt) {
-        while (true) {
-            String input = readRequiredText(prompt);
-            if (input.matches(NAME_PATTERN)) {
-                return input;
-            }
-            showError(NAME_ERROR);
-        }
-    }
-
-    public String readOptionalName(String prompt) {
-        while (true) {
-            System.out.print(prompt + " (opcional): ");
-            String input = scanner.nextLine().trim();
-            if (input.isEmpty()) {
-                return null;
-            }
-            if (input.matches(NAME_PATTERN)) {
-                return input;
-            }
-            showError(NAME_ERROR);
-        }
-    }
-
-    public String readNameKeepingCurrent(String label, String current) {
-        while (true) {
-            System.out.print(label + " [" + (current == null ? "" : current) + "]: ");
-            String input = scanner.nextLine().trim();
-            if (input.isEmpty()) {
-                return current;
-            }
-            if (input.matches(NAME_PATTERN)) {
-                return input;
-            }
-            showError(NAME_ERROR);
-        }
-    }
-
-    public String readOptionalPhone(String prompt, int minLength, int maxLength) {
-        while (true) {
-            System.out.print(prompt + " (opcional): ");
-            String input = scanner.nextLine().trim();
-            if (input.isEmpty()) {
-                return null;
-            }
-            if (isValidPhone(input, minLength, maxLength)) {
-                return input;
-            }
-            showError(phoneErrorMessage(minLength, maxLength));
-        }
-    }
-
-    public String readPhoneKeepingCurrent(String label, String current,
-            int minLength, int maxLength) {
-        while (true) {
-            System.out.print(label + " [" + (current == null ? "" : current) + "]: ");
-            String input = scanner.nextLine().trim();
-            if (input.isEmpty()) {
-                return current;
-            }
-            if (isValidPhone(input, minLength, maxLength)) {
-                return input;
-            }
-            showError(phoneErrorMessage(minLength, maxLength));
-        }
-    }
-
-    public LocalDate readDate(String prompt) {
-        while (true) {
-            System.out.print(prompt + " (aaaa-mm-dd): ");
-            String input = scanner.nextLine().trim();
-            try {
-                return LocalDate.parse(input);
-            } catch (DateTimeParseException e) {
-                showError(DATE_ERROR);
-            }
-        }
-    }
-
-    public LocalDate readDateKeepingCurrent(String label, LocalDate current) {
-        while (true) {
-            System.out.print(label + " [" + current + "] (aaaa-mm-dd): ");
-            String input = scanner.nextLine().trim();
-            if (input.isEmpty()) {
-                return current;
-            }
-            try {
-                return LocalDate.parse(input);
-            } catch (DateTimeParseException e) {
-                showError(DATE_ERROR);
-            }
-        }
-    }
-
-    public String readChoice(String label, List<String> options) {
-        while (true) {
-            System.out.print(label + " (" + String.join(", ", options) + "): ");
-            String input = scanner.nextLine().trim();
-            Optional<String> match = findOption(input, options);
-            if (match.isPresent()) {
-                return match.get();
-            }
-            showError("Opción no válida. Elija una de: " + String.join(", ", options) + ".");
-        }
-    }
-
-    public String readChoiceKeepingCurrent(String label, String current, List<String> options) {
-        while (true) {
-            System.out.print(label + " [" + current + "] ("
-                    + String.join(", ", options) + "): ");
-            String input = scanner.nextLine().trim();
-            if (input.isEmpty()) {
-                return current;
-            }
-            Optional<String> match = findOption(input, options);
-            if (match.isPresent()) {
-                return match.get();
-            }
-            showError("Opción no válida. Elija una de: " + String.join(", ", options) + ".");
-        }
+    public DocumentId askDocumentId() {
+        String type = input.readChoice("Tipo de documento", StudentService.DOCUMENT_TYPES);
+        String number = input.readRequiredText(
+                "Número de documento: ", StudentService.MAX_DOCUMENT_NUMBER_LENGTH);
+        return new DocumentId(type, number);
     }
 
     public boolean confirm(String question) {
-        while (true) {
-            System.out.print(question + " (si/no): ");
-            String input = scanner.nextLine().trim().toLowerCase();
-            if (input.equals("si") || input.equals("sí")) {
-                return true;
-            }
-            if (input.equals("no")) {
-                return false;
-            }
-            showError("Responda si o no.");
-        }
+        return input.confirm(question);
     }
 
     public void showMessage(String message) {
@@ -222,7 +104,7 @@ public class StudentView {
     }
 
     public void showError(String message) {
-        System.out.println("[ERROR] " + message);
+        input.showError(message);
     }
 
     public void showStudentList(List<Student> students) {
@@ -253,23 +135,6 @@ public class StudentView {
         printField("Fecha de ingreso", String.valueOf(student.getAdmissionDate()));
         printField("Estado", student.getStatus());
         System.out.println("------------------------------");
-    }
-
-    private Optional<String> findOption(String input, List<String> options) {
-        return options.stream()
-                .filter(option -> option.equalsIgnoreCase(input))
-                .findFirst();
-    }
-
-    private boolean isValidPhone(String input, int minLength, int maxLength) {
-        return input.matches("\\d+")
-                && input.length() >= minLength
-                && input.length() <= maxLength;
-    }
-
-    private String phoneErrorMessage(int minLength, int maxLength) {
-        return "El teléfono debe tener solo números, entre " + minLength
-                + " y " + maxLength + " dígitos.";
     }
 
     private void printField(String label, String value) {

@@ -3,12 +3,13 @@ package com.littlehorizons.erp.controller;
 import com.littlehorizons.erp.model.Student;
 import com.littlehorizons.erp.service.StudentService;
 import com.littlehorizons.erp.service.ValidationException;
+import com.littlehorizons.erp.util.ConsoleInput;
 import com.littlehorizons.erp.util.ErrorLogger;
 import com.littlehorizons.erp.view.StudentView;
 import java.sql.SQLException;
 
 /**
- * Coordinates the student menu: reads user actions, calls the service and
+ * Coordinates the student menu: asks the view for data, calls the service and
  * asks the view to show the result.
  */
 public class StudentController {
@@ -45,6 +46,8 @@ public class StudentController {
     private void execute(Operation operation) {
         try {
             operation.run();
+        } catch (ConsoleInput.CancelledException e) {
+            studentView.showMessage("Operación cancelada. No se guardó ningún cambio.");
         } catch (ValidationException e) {
             studentView.showError(e.getMessage());
         } catch (SQLException e) {
@@ -55,26 +58,7 @@ public class StudentController {
     }
 
     private void registerStudent() throws ValidationException, SQLException {
-        Student student = new Student();
-        student.setDocumentType(studentView.readChoice(
-                "Tipo de documento", StudentService.DOCUMENT_TYPES));
-        student.setDocumentNumber(studentView.readRequiredText(
-                "Número de documento: ", StudentService.MAX_DOCUMENT_NUMBER_LENGTH));
-        student.setFirstName(studentView.readRequiredName("Primer nombre: "));
-        student.setMiddleName(studentView.readOptionalName("Segundo nombre"));
-        student.setFirstLastName(studentView.readRequiredName("Primer apellido: "));
-        student.setSecondLastName(studentView.readOptionalName("Segundo apellido"));
-        student.setBirthDate(studentView.readDate("Fecha de nacimiento"));
-        student.setGender(studentView.readChoice("Género", StudentService.GENDERS));
-        student.setAddress(studentView.readOptionalText("Dirección"));
-        student.setPhone(studentView.readOptionalPhone("Teléfono",
-                StudentService.PHONE_MIN_LENGTH, StudentService.PHONE_MAX_LENGTH));
-        student.setEmail(studentView.readOptionalText("Correo electrónico"));
-        student.setBloodType(studentView.readOptionalText("Tipo de sangre"));
-        student.setAllergies(studentView.readOptionalText("Alergias"));
-        student.setMedicalConditions(studentView.readOptionalText("Condiciones médicas"));
-        student.setAdmissionDate(studentView.readDate("Fecha de ingreso"));
-
+        Student student = studentView.askNewStudent();
         studentService.registerStudent(student);
         studentView.showMessage("Estudiante registrado con id " + student.getId() + ".");
     }
@@ -84,42 +68,18 @@ public class StudentController {
     }
 
     private void searchStudent() throws ValidationException, SQLException {
-        studentView.showStudentDetail(askForExistingStudent());
+        studentView.showStudentDetail(findStudentFromUser());
     }
 
     private void updateStudent() throws ValidationException, SQLException {
-        Student student = askForExistingStudent();
-        studentView.showMessage("Presione Enter para conservar el valor actual.");
-        student.setFirstName(studentView.readNameKeepingCurrent(
-                "Primer nombre", student.getFirstName()));
-        student.setMiddleName(studentView.readNameKeepingCurrent(
-                "Segundo nombre", student.getMiddleName()));
-        student.setFirstLastName(studentView.readNameKeepingCurrent(
-                "Primer apellido", student.getFirstLastName()));
-        student.setSecondLastName(studentView.readNameKeepingCurrent(
-                "Segundo apellido", student.getSecondLastName()));
-        student.setBirthDate(studentView.readDateKeepingCurrent(
-                "Fecha de nacimiento", student.getBirthDate()));
-        student.setGender(studentView.readChoiceKeepingCurrent(
-                "Género", student.getGender(), StudentService.GENDERS));
-        student.setAddress(studentView.readTextKeepingCurrent("Dirección", student.getAddress()));
-        student.setPhone(studentView.readPhoneKeepingCurrent("Teléfono", student.getPhone(),
-                StudentService.PHONE_MIN_LENGTH, StudentService.PHONE_MAX_LENGTH));
-        student.setEmail(studentView.readTextKeepingCurrent(
-                "Correo electrónico", student.getEmail()));
-        student.setBloodType(studentView.readTextKeepingCurrent(
-                "Tipo de sangre", student.getBloodType()));
-        student.setAllergies(studentView.readTextKeepingCurrent(
-                "Alergias", student.getAllergies()));
-        student.setMedicalConditions(studentView.readTextKeepingCurrent(
-                "Condiciones médicas", student.getMedicalConditions()));
-
+        Student student = findStudentFromUser();
+        studentView.askStudentChanges(student);
         studentService.updateStudent(student);
         studentView.showMessage("Estudiante actualizado.");
     }
 
     private void withdrawStudent() throws ValidationException, SQLException {
-        Student student = askForExistingStudent();
+        Student student = findStudentFromUser();
         if (studentView.confirm("¿Retirar a " + student.getFullName() + "?")) {
             studentService.withdrawStudent(student.getId());
             studentView.showMessage("Estudiante retirado.");
@@ -127,7 +87,7 @@ public class StudentController {
     }
 
     private void deleteStudent() throws ValidationException, SQLException {
-        Student student = askForExistingStudent();
+        Student student = findStudentFromUser();
         studentView.showMessage("ADVERTENCIA: eliminar también borra las matrículas, notas, "
                 + "asistencia y pagos de este estudiante. Para estudiantes reales use 'Retirar'.");
         if (studentView.confirm("¿Eliminar definitivamente a " + student.getFullName() + "?")) {
@@ -136,12 +96,9 @@ public class StudentController {
         }
     }
 
-    private Student askForExistingStudent() throws ValidationException, SQLException {
-        String documentType = studentView.readChoice(
-                "Tipo de documento", StudentService.DOCUMENT_TYPES);
-        String documentNumber = studentView.readRequiredText(
-                "Número de documento: ", StudentService.MAX_DOCUMENT_NUMBER_LENGTH);
-        return studentService.findByDocument(documentType, documentNumber).orElseThrow(
+    private Student findStudentFromUser() throws ValidationException, SQLException {
+        StudentView.DocumentId documentId = studentView.askDocumentId();
+        return studentService.findByDocument(documentId.type(), documentId.number()).orElseThrow(
                 () -> new ValidationException("No se encontró ningún estudiante con ese documento."));
     }
 }
