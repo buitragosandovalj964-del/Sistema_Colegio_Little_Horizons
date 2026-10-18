@@ -1,17 +1,20 @@
 package com.littlehorizons.erp;
 
+import com.littlehorizons.erp.controller.AssignmentController;
 import com.littlehorizons.erp.controller.GuardianController;
 import com.littlehorizons.erp.controller.MainController;
 import com.littlehorizons.erp.controller.StudentController;
 import com.littlehorizons.erp.controller.StudentGuardianController;
 import com.littlehorizons.erp.controller.SubjectController;
 import com.littlehorizons.erp.controller.TeacherController;
+import com.littlehorizons.erp.service.AssignmentService;
 import com.littlehorizons.erp.service.GuardianService;
 import com.littlehorizons.erp.service.StudentGuardianService;
 import com.littlehorizons.erp.service.StudentService;
 import com.littlehorizons.erp.service.SubjectService;
 import com.littlehorizons.erp.service.TeacherService;
 import com.littlehorizons.erp.util.ConsoleInput;
+import com.littlehorizons.erp.view.AssignmentView;
 import com.littlehorizons.erp.view.GuardianView;
 import com.littlehorizons.erp.view.MainView;
 import com.littlehorizons.erp.view.StudentGuardianView;
@@ -30,6 +33,8 @@ public class Main {
 
         StudentService studentService = new StudentService();
         GuardianService guardianService = new GuardianService();
+        TeacherService teacherService = new TeacherService();
+        SubjectService subjectService = new SubjectService();
         GuardianView guardianView = new GuardianView(input);
 
         GuardianController guardianController =
@@ -41,9 +46,12 @@ public class Main {
                 studentService, new StudentView(input), guardianController,
                 studentGuardianController);
         SubjectController subjectController =
-                new SubjectController(new SubjectService(), new SubjectView(input));
-        TeacherController teacherController =
-                new TeacherController(new TeacherService(), new TeacherView(input));
+                new SubjectController(subjectService, new SubjectView(input));
+        AssignmentController assignmentController = new AssignmentController(
+                new AssignmentService(), teacherService, subjectService,
+                new AssignmentView(input));
+        TeacherController teacherController = new TeacherController(
+                teacherService, new TeacherView(input), assignmentController);
         MainController mainController = new MainController(
                 new MainView(input), studentController, subjectController, teacherController);
 

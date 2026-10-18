@@ -16,10 +16,13 @@ public class TeacherController {
 
     private final TeacherService teacherService;
     private final TeacherView teacherView;
+    private final AssignmentController assignmentController;
 
-    public TeacherController(TeacherService teacherService, TeacherView teacherView) {
+    public TeacherController(TeacherService teacherService, TeacherView teacherView,
+            AssignmentController assignmentController) {
         this.teacherService = teacherService;
         this.teacherView = teacherView;
+        this.assignmentController = assignmentController;
     }
 
     private interface Operation {
@@ -37,6 +40,7 @@ public class TeacherController {
                 case 4 -> execute(this::updateTeacher);
                 case 5 -> execute(this::changeStatus);
                 case 6 -> execute(this::deleteTeacher);
+                case 7 -> assignmentController.run();
                 case 0 -> running = false;
                 default -> teacherView.showError("Opción inválida.");
             }
@@ -90,7 +94,8 @@ public class TeacherController {
     private void deleteTeacher() throws ValidationException, SQLException {
         Teacher teacher = findTeacherFromUser();
         teacherView.showMessage("ADVERTENCIA: eliminar también borra las asignaciones de "
-                + "materias de este profesor. Para profesores reales use 'Cambiar estado'.");
+                + "materias y los horarios de este profesor. "
+                + "Para profesores reales use 'Cambiar estado'.");
         if (teacherView.confirm("¿Eliminar definitivamente a " + teacher.getFullName() + "?")) {
             teacherService.deleteTeacher(teacher.getId());
             teacherView.showMessage("Profesor eliminado.");

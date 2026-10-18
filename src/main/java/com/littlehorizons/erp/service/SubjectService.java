@@ -10,15 +10,16 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Business rules for subjects. The code is generated from a prefix and the
- * grade level (for example MAT-5). User-facing messages are in Spanish.
+ * Business rules for subjects. The code is generated from a 3-letter prefix and
+ * the grade level (for example MAT-5). User-facing messages are in Spanish.
  */
 public class SubjectService {
 
     public static final int MIN_WEEKLY_HOURS = 1;
     public static final int MAX_WEEKLY_HOURS = 10;
     public static final int MAX_NAME_LENGTH = 100;
-    public static final String CODE_PREFIX_PATTERN = "[A-Za-z]{2,5}";
+    public static final String CODE_PREFIX_PATTERN = "[A-Za-z]{3}";
+    /** Accepts 2 to 5 letters so that older codes can still be found. */
     public static final String CODE_PATTERN = "[A-Za-z]{2,5}-\\d{1,2}";
 
     private static final int MAX_DESCRIPTION_LENGTH = 500;
@@ -38,12 +39,13 @@ public class SubjectService {
     public void registerSubject(Subject subject, String codePrefix)
             throws ValidationException, SQLException {
         if (codePrefix == null || !codePrefix.matches(CODE_PREFIX_PATTERN)) {
-            throw new ValidationException("El prefijo del código debe tener entre 2 y 5 letras.");
+            throw new ValidationException("El prefijo del código debe tener exactamente 3 letras.");
         }
         Grade grade = findExistingGrade(subject.getGrade());
         subject.setGrade(grade);
         subject.setCode(codePrefix.toUpperCase() + "-" + grade.getNumericLevel());
         validate(subject);
+        subject.setName(capitalize(subject.getName()));
         if (subjectDao.findByCode(subject.getCode()).isPresent()) {
             throw new ValidationException(
                     "Ya existe una materia con el código " + subject.getCode() + ".");
@@ -58,6 +60,7 @@ public class SubjectService {
                     "La materia no tiene id, por lo que no se puede actualizar.");
         }
         validate(subject);
+        subject.setName(capitalize(subject.getName()));
         checkNameNotRepeated(subject);
         if (!subjectDao.update(subject)) {
             throw new ValidationException(
@@ -129,5 +132,14 @@ public class SubjectService {
             throw new ValidationException("Ya existe una materia llamada '" + subject.getName()
                     + "' en " + subject.getGrade().getName() + ".");
         }
+    }
+
+    /**
+     * First letter in uppercase and the rest in lowercase ("educación FÍSICA" becomes
+     * "Educación física"). The text is already validated as not blank.
+     */
+    private String capitalize(String text) {
+        String trimmed = text.trim();
+        return trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1).toLowerCase();
     }
 }

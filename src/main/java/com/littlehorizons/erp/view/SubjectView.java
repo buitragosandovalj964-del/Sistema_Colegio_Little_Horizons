@@ -46,9 +46,9 @@ public class SubjectView {
         Subject subject = new Subject();
         subject.setGrade(askGrade(grades));
         String codePrefix = input.readRequiredPattern(
-                "Prefijo del código (2 a 5 letras, ej: MAT): ",
+                "Prefijo del código (3 letras, ej: MAT): ",
                 SubjectService.CODE_PREFIX_PATTERN,
-                "El prefijo debe tener entre 2 y 5 letras, sin números ni espacios.");
+                "El prefijo debe tener exactamente 3 letras, sin números ni espacios.");
         subject.setName(input.readRequiredText(
                 "Nombre de la materia: ", SubjectService.MAX_NAME_LENGTH));
         subject.setDescription(input.readOptionalText("Descripción"));
@@ -63,11 +63,7 @@ public class SubjectView {
         showMessage("Presione Enter para conservar el valor actual. Escriba '"
                 + ConsoleInput.CANCEL_WORD + "' para volver al menú. "
                 + "El código y el grado no se pueden cambiar.");
-        String name = input.readTextKeepingCurrent("Nombre", subject.getName());
-        if (name.length() > SubjectService.MAX_NAME_LENGTH) {
-            showError("Máximo " + SubjectService.MAX_NAME_LENGTH + " caracteres.");
-        }
-        subject.setName(name);
+        subject.setName(input.readTextKeepingCurrent("Nombre", subject.getName()));
         subject.setDescription(input.readTextKeepingCurrent(
                 "Descripción", subject.getDescription()));
         subject.setWeeklyHours(input.readIntKeepingCurrent("Horas semanales",

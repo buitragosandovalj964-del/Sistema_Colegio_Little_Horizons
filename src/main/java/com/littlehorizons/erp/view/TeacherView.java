@@ -34,6 +34,7 @@ public class TeacherView {
         System.out.println("4. Actualizar profesor");
         System.out.println("5. Cambiar estado (Activo, Inactivo, Licencia)");
         System.out.println("6. Eliminar profesor (registros creados por error)");
+        System.out.println("7. Asignaciones y horarios");
         System.out.println("0. Volver al menú principal");
         return input.readMenuOption("Seleccione una opción: ");
     }
