@@ -2,6 +2,7 @@ package com.littlehorizons.erp.view;
 
 import com.littlehorizons.erp.model.Assignment;
 import com.littlehorizons.erp.model.ScheduleSlot;
+import com.littlehorizons.erp.model.Subject;
 import com.littlehorizons.erp.model.Teacher;
 import com.littlehorizons.erp.service.AssignmentService;
 import com.littlehorizons.erp.service.FieldValidator;
@@ -26,6 +27,8 @@ public class AssignmentView {
     private record ScheduleRow(ScheduleSlot slot, Assignment assignment) { }
 
     private static final String TIME_PATTERN = "([01]\\d|2[0-3]):[0-5]\\d";
+    private static final String POSITIVE_NUMBER_PATTERN = "[1-9]\\d{0,8}";
+    private static final String SEPARATOR = "-".repeat(78);
 
     private final ConsoleInput input;
 
@@ -77,13 +80,18 @@ public class AssignmentView {
     }
 
     public int askAssignmentId() {
-        return input.readIntInRange("Número de la asignación (el que aparece entre corchetes): ",
-                1, Integer.MAX_VALUE);
+        String text = input.readRequiredPattern("Número de la asignación (columna ID): ",
+                POSITIVE_NUMBER_PATTERN,
+                "Ingrese solo el número de la asignación, por ejemplo 3.");
+        return Integer.parseInt(text);
     }
 
     public int askSlotId() {
-        return input.readIntInRange("Número de la franja (el que aparece entre corchetes): ",
-                1, Integer.MAX_VALUE);
+        String text = input.readRequiredPattern(
+                "Número de la franja (el que aparece como 'Franja N'): ",
+                POSITIVE_NUMBER_PATTERN,
+                "Ingrese solo el número de la franja, por ejemplo 4.");
+        return Integer.parseInt(text);
     }
 
     public String askDay() {
@@ -109,32 +117,42 @@ public class AssignmentView {
     }
 
     public void showAssignments(Teacher teacher, List<Assignment> assignments) {
-        System.out.println("Asignaciones de " + teacher.getFullName() + ":");
+        System.out.println(SEPARATOR);
+        System.out.println("Profesor: " + teacher.getFullName() + " | "
+                + teacher.getDocumentType() + " " + teacher.getDocumentNumber()
+                + " | Estado: " + teacher.getStatus());
+        System.out.println("Total de asignaciones: " + assignments.size());
+        System.out.println(SEPARATOR);
         if (assignments.isEmpty()) {
-            showMessage("  Este profesor todavía no tiene materias asignadas.");
+            showMessage("Este profesor todavía no tiene materias asignadas.");
             return;
         }
+        System.out.printf("%-5s %-6s %-10s %-24s %-12s %-5s %-16s%n",
+                "ID", "AÑO", "CÓDIGO", "MATERIA", "GRADO", "SEC.", "HORAS PROG.");
         for (Assignment assignment : assignments) {
-            System.out.printf("[Asignación %d] %s - %s | %s | Sección %s | Año %d%n",
-                    assignment.getId(), assignment.getSubject().getCode(),
-                    assignment.getSubject().getName(), assignment.getSubject().getGrade().getName(),
-                    assignment.getSection(), assignment.getAcademicYear());
-            System.out.printf("    Programado: %d min de %d min semanales%n",
-                    assignment.getScheduledMinutes(),
-                    assignment.getSubject().getWeeklyHours() * 60);
+            Subject subject = assignment.getSubject();
+            System.out.printf("%-5d %-6d %-10s %-24s %-12s %-5s %-16s%n",
+                    assignment.getId(), assignment.getAcademicYear(), subject.getCode(),
+                    subject.getName(), subject.getGrade().getName(), assignment.getSection(),
+                    formatDuration(assignment.getScheduledMinutes()) + " de "
+                            + formatDuration(subject.getWeeklyHours() * 60L));
             if (assignment.getSlots().isEmpty()) {
-                System.out.println("    Sin franjas horarias.");
+                System.out.println("      (sin franjas horarias todavía)");
             }
             assignment.getSlots().forEach(slot -> System.out.printf(
-                    "    [Franja %d] %s %s - %s%n",
-                    slot.getId(), slot.getDay(), slot.getStartTime(), slot.getEndTime()));
+                    "      Franja %d: %-10s %s - %s (%s)%n",
+                    slot.getId(), slot.getDay(), slot.getStartTime(), slot.getEndTime(),
+                    formatDuration(slot.getDurationMinutes())));
         }
+        System.out.println(SEPARATOR);
     }
 
     public void showWeeklySchedule(Teacher teacher, int academicYear,
             List<Assignment> assignments) {
+        System.out.println(SEPARATOR);
         System.out.println("Horario semanal de " + teacher.getFullName()
-                + " - año " + academicYear + ":");
+                + " - año " + academicYear);
+        System.out.println(SEPARATOR);
         List<ScheduleRow> rows = assignments.stream()
                 .filter(assignment -> assignment.getAcademicYear() == academicYear)
                 .flatMap(assignment -> assignment.getSlots().stream()
@@ -145,17 +163,40 @@ public class AssignmentView {
                         .thenComparing(row -> row.slot().getStartTime()))
                 .toList();
         if (rows.isEmpty()) {
-            showMessage("  No hay franjas horarias registradas para ese año.");
+            showMessage("No hay franjas horarias registradas para ese año.");
             return;
         }
-        System.out.printf("%-10s %-13s %-9s %-24s %-12s %-8s%n",
-                "DÍA", "HORARIO", "CÓDIGO", "MATERIA", "GRADO", "SECCIÓN");
-        rows.forEach(row -> System.out.printf("%-10s %-13s %-9s %-24s %-12s %-8s%n",
+        System.out.printf("%-10s %-13s %-9s %-24s %-12s %-5s%n",
+                "DÍA", "HORARIO", "CÓDIGO", "MATERIA", "GRADO", "SEC.");
+        rows.forEach(row -> System.out.printf("%-10s %-13s %-9s %-24s %-12s %-5s%n",
                 row.slot().getDay(),
                 row.slot().getStartTime() + "-" + row.slot().getEndTime(),
                 row.assignment().getSubject().getCode(),
                 row.assignment().getSubject().getName(),
                 row.assignment().getSubject().getGrade().getName(),
                 row.assignment().getSection()));
+        long totalMinutes = rows.stream()
+                .mapToLong(row -> row.slot().getDurationMinutes())
+                .sum();
+        System.out.println(SEPARATOR);
+        System.out.println("Total semanal: " + formatDuration(totalMinutes));
+    }
+
+    /**
+     * Shows minutes as hours when possible: 60 -> "1 h", 90 -> "1 h 30 min", 45 -> "45 min".
+     */
+    private String formatDuration(long minutes) {
+        long hours = minutes / 60;
+        long remainder = minutes % 60;
+        if (hours == 0 && remainder == 0) {
+            return "0 h";
+        }
+        if (remainder == 0) {
+            return hours + " h";
+        }
+        if (hours == 0) {
+            return remainder + " min";
+        }
+        return hours + " h " + remainder + " min";
     }
 }

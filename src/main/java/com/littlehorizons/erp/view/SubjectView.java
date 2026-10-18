@@ -7,8 +7,8 @@ import com.littlehorizons.erp.util.ConsoleInput;
 import java.util.List;
 
 /**
- * Console screens for the academic module (grades and subjects): asks for data
- * and shows results. Everything shown to the user is in Spanish.
+ * Console screens for grades and subjects: asks for data and shows results.
+ * Everything shown to the user is in Spanish.
  */
 public class SubjectView {
 
@@ -26,7 +26,7 @@ public class SubjectView {
     public int showMenuAndReadOption() {
         System.out.println();
         System.out.println("==============================");
-        System.out.println("   GESTIÓN ACADÉMICA");
+        System.out.println("     GRADOS Y MATERIAS");
         System.out.println("==============================");
         System.out.println("1. Ver grados");
         System.out.println("2. Registrar materia");
@@ -36,7 +36,7 @@ public class SubjectView {
         System.out.println("6. Actualizar materia");
         System.out.println("7. Activar / desactivar materia");
         System.out.println("8. Eliminar materia (registros creados por error)");
-        System.out.println("0. Volver al menú principal");
+        System.out.println("0. Volver");
         return input.readMenuOption("Seleccione una opción: ");
     }
 
