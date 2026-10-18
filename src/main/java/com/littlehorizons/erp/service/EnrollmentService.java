@@ -3,6 +3,7 @@ package com.littlehorizons.erp.service;
 import com.littlehorizons.erp.dao.EnrollmentDao;
 import com.littlehorizons.erp.dao.GradeDao;
 import com.littlehorizons.erp.dao.StudentDao;
+import com.littlehorizons.erp.dao.SubjectEnrollmentDao;
 import com.littlehorizons.erp.model.Enrollment;
 import com.littlehorizons.erp.model.Grade;
 import com.littlehorizons.erp.model.Student;
@@ -33,18 +34,21 @@ public class EnrollmentService {
     private final StudentDao studentDao;
     private final GradeDao gradeDao;
     private final StudentGuardianService guardianLinkService;
+    private final SubjectEnrollmentDao inscriptionDao;
 
     public EnrollmentService() {
         this(new EnrollmentDao(), new StudentDao(), new GradeDao(),
-                new StudentGuardianService());
+                new StudentGuardianService(), new SubjectEnrollmentDao());
     }
 
     public EnrollmentService(EnrollmentDao enrollmentDao, StudentDao studentDao,
-            GradeDao gradeDao, StudentGuardianService guardianLinkService) {
+            GradeDao gradeDao, StudentGuardianService guardianLinkService,
+            SubjectEnrollmentDao inscriptionDao) {
         this.enrollmentDao = enrollmentDao;
         this.studentDao = studentDao;
         this.gradeDao = gradeDao;
         this.guardianLinkService = guardianLinkService;
+        this.inscriptionDao = inscriptionDao;
     }
 
     public void registerEnrollment(Student student, Grade grade, int academicYear,
@@ -81,8 +85,8 @@ public class EnrollmentService {
     }
 
     /**
-     * Completes or withdraws an active enrollment. Completing the last grade
-     * graduates the student.
+     * Completes or withdraws an active enrollment. Its active subject enrollments
+     * take the same status. Completing the last grade graduates the student.
      */
     public void changeStatus(Student student, int enrollmentId, String newStatus, String notes)
             throws ValidationException, SQLException {
@@ -96,6 +100,8 @@ public class EnrollmentService {
 
         LocalDate withdrawalDate = STATUS_WITHDRAWN.equals(newStatus) ? LocalDate.now() : null;
         enrollmentDao.updateStatus(enrollmentId, newStatus, withdrawalDate, notes);
+        inscriptionDao.updateStatusForYear(student.getId(), enrollment.getAcademicYear(),
+                newStatus);
 
         boolean finishedLastGrade = STATUS_COMPLETED.equals(newStatus)
                 && enrollment.getGrade().getNumericLevel() == LAST_GRADE_LEVEL;
@@ -107,7 +113,14 @@ public class EnrollmentService {
 
     public void deleteEnrollment(Student student, int enrollmentId)
             throws ValidationException, SQLException {
-        getEnrollmentOf(student, enrollmentId);
+        Enrollment enrollment = getEnrollmentOf(student, enrollmentId);
+        if (inscriptionDao.countByStudentAndYear(student.getId(),
+                enrollment.getAcademicYear()) > 0) {
+            throw new ValidationException("No se puede eliminar la matrícula porque el "
+                    + "estudiante tiene inscripciones en materias en "
+                    + enrollment.getAcademicYear()
+                    + ". Elimínelas primero (Gestión Académica > Inscripciones).");
+        }
         enrollmentDao.deleteById(enrollmentId);
     }
 
