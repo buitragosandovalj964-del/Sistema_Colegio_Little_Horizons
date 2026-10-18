@@ -9,12 +9,14 @@ public class MainController {
 
     private final MainView mainView;
     private final StudentController studentController;
+    private final SubjectController subjectController;
     private final TeacherController teacherController;
 
     public MainController(MainView mainView, StudentController studentController,
-            TeacherController teacherController) {
+            SubjectController subjectController, TeacherController teacherController) {
         this.mainView = mainView;
         this.studentController = studentController;
+        this.subjectController = subjectController;
         this.teacherController = teacherController;
     }
 
@@ -24,8 +26,9 @@ public class MainController {
             int option = mainView.showMenuAndReadOption();
             switch (option) {
                 case 1 -> studentController.run();
+                case 2 -> subjectController.run();
                 case 3 -> teacherController.run();
-                case 2, 4, 5, 6, 7 ->
+                case 4, 5, 6, 7 ->
                     mainView.showMessage("Este módulo aún está en construcción.");
                 case 8 -> running = false;
                 default -> mainView.showError("Opción inválida.");

@@ -73,6 +73,16 @@ public class ConsoleInput {
         }
     }
 
+    public String readRequiredPattern(String prompt, String pattern, String errorMessage) {
+        while (true) {
+            String text = readRequiredText(prompt);
+            if (text.matches(pattern)) {
+                return text;
+            }
+            showError(errorMessage);
+        }
+    }
+
     public String readOptionalText(String prompt) {
         String text = readLine(prompt + " (opcional): ");
         return text.isEmpty() ? null : text;
@@ -81,6 +91,31 @@ public class ConsoleInput {
     public String readTextKeepingCurrent(String label, String current) {
         String text = readLine(label + " [" + orEmpty(current) + "]: ");
         return text.isEmpty() ? current : text;
+    }
+
+    public int readIntInRange(String prompt, int min, int max) {
+        while (true) {
+            String text = readLine(prompt);
+            Optional<Integer> value = parseIntInRange(text, min, max);
+            if (value.isPresent()) {
+                return value.get();
+            }
+            showError(intRangeMessage(min, max));
+        }
+    }
+
+    public int readIntKeepingCurrent(String label, int current, int min, int max) {
+        while (true) {
+            String text = readLine(label + " [" + current + "]: ");
+            if (text.isEmpty()) {
+                return current;
+            }
+            Optional<Integer> value = parseIntInRange(text, min, max);
+            if (value.isPresent()) {
+                return value.get();
+            }
+            showError(intRangeMessage(min, max));
+        }
     }
 
     public String readRequiredName(String prompt) {
@@ -287,6 +322,15 @@ public class ConsoleInput {
         return Optional.empty();
     }
 
+    private Optional<Integer> parseIntInRange(String text, int min, int max) {
+        try {
+            int value = Integer.parseInt(text);
+            return value >= min && value <= max ? Optional.of(value) : Optional.empty();
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
     private String readLine(String prompt) {
         String text = readRaw(prompt);
         if (text.equalsIgnoreCase(CANCEL_WORD)) {
@@ -331,6 +375,10 @@ public class ConsoleInput {
     private String phoneErrorMessage(int minLength, int maxLength) {
         return "El teléfono debe tener solo números, entre " + minLength
                 + " y " + maxLength + " dígitos.";
+    }
+
+    private String intRangeMessage(int min, int max) {
+        return "Ingrese un número entero entre " + min + " y " + max + ".";
     }
 
     private String orEmpty(String value) {
