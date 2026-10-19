@@ -6,6 +6,8 @@ import com.littlehorizons.erp.controller.AssignmentController;
 import com.littlehorizons.erp.controller.AttendanceController;
 import com.littlehorizons.erp.controller.ClubController;
 import com.littlehorizons.erp.controller.EnrollmentController;
+import com.littlehorizons.erp.controller.EventController;
+import com.littlehorizons.erp.controller.ExtracurricularController;
 import com.littlehorizons.erp.controller.GuardianController;
 import com.littlehorizons.erp.controller.MainController;
 import com.littlehorizons.erp.controller.StudentController;
@@ -18,6 +20,7 @@ import com.littlehorizons.erp.service.AssignmentService;
 import com.littlehorizons.erp.service.AttendanceService;
 import com.littlehorizons.erp.service.ClubService;
 import com.littlehorizons.erp.service.EnrollmentService;
+import com.littlehorizons.erp.service.EventService;
 import com.littlehorizons.erp.service.GuardianService;
 import com.littlehorizons.erp.service.StudentGuardianService;
 import com.littlehorizons.erp.service.StudentService;
@@ -31,6 +34,8 @@ import com.littlehorizons.erp.view.AssignmentView;
 import com.littlehorizons.erp.view.AttendanceView;
 import com.littlehorizons.erp.view.ClubView;
 import com.littlehorizons.erp.view.EnrollmentView;
+import com.littlehorizons.erp.view.EventView;
+import com.littlehorizons.erp.view.ExtracurricularView;
 import com.littlehorizons.erp.view.GuardianView;
 import com.littlehorizons.erp.view.MainView;
 import com.littlehorizons.erp.view.StudentGuardianView;
@@ -88,9 +93,14 @@ public class Main {
 
         ClubController clubController = new ClubController(
                 new ClubService(), studentService, teacherService, new ClubView(input));
+        EventController eventController = new EventController(
+                new EventService(), studentService, teacherService, new EventView(input));
+        ExtracurricularController extracurricularController = new ExtracurricularController(
+                new ExtracurricularView(input), clubController, eventController);
 
         MainController mainController = new MainController(new MainView(input),
-                studentController, academicController, teacherController, clubController);
+                studentController, academicController, teacherController,
+                extracurricularController);
 
         mainController.run();
         System.out.println("Hasta pronto.");
