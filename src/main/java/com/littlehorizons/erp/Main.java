@@ -4,6 +4,7 @@ import com.littlehorizons.erp.controller.AcademicController;
 import com.littlehorizons.erp.controller.AcademicRecordController;
 import com.littlehorizons.erp.controller.AssignmentController;
 import com.littlehorizons.erp.controller.AttendanceController;
+import com.littlehorizons.erp.controller.ClubController;
 import com.littlehorizons.erp.controller.EnrollmentController;
 import com.littlehorizons.erp.controller.GuardianController;
 import com.littlehorizons.erp.controller.MainController;
@@ -15,6 +16,7 @@ import com.littlehorizons.erp.controller.TeacherController;
 import com.littlehorizons.erp.service.AcademicRecordService;
 import com.littlehorizons.erp.service.AssignmentService;
 import com.littlehorizons.erp.service.AttendanceService;
+import com.littlehorizons.erp.service.ClubService;
 import com.littlehorizons.erp.service.EnrollmentService;
 import com.littlehorizons.erp.service.GuardianService;
 import com.littlehorizons.erp.service.StudentGuardianService;
@@ -27,6 +29,7 @@ import com.littlehorizons.erp.view.AcademicRecordView;
 import com.littlehorizons.erp.view.AcademicView;
 import com.littlehorizons.erp.view.AssignmentView;
 import com.littlehorizons.erp.view.AttendanceView;
+import com.littlehorizons.erp.view.ClubView;
 import com.littlehorizons.erp.view.EnrollmentView;
 import com.littlehorizons.erp.view.GuardianView;
 import com.littlehorizons.erp.view.MainView;
@@ -83,8 +86,11 @@ public class Main {
         TeacherController teacherController = new TeacherController(
                 teacherService, new TeacherView(input), assignmentController);
 
-        MainController mainController = new MainController(
-                new MainView(input), studentController, academicController, teacherController);
+        ClubController clubController = new ClubController(
+                new ClubService(), studentService, teacherService, new ClubView(input));
+
+        MainController mainController = new MainController(new MainView(input),
+                studentController, academicController, teacherController, clubController);
 
         mainController.run();
         System.out.println("Hasta pronto.");
