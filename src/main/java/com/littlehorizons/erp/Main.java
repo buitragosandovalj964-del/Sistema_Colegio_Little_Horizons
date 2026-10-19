@@ -3,6 +3,7 @@ package com.littlehorizons.erp;
 import com.littlehorizons.erp.controller.AcademicController;
 import com.littlehorizons.erp.controller.AcademicRecordController;
 import com.littlehorizons.erp.controller.AssignmentController;
+import com.littlehorizons.erp.controller.AttendanceController;
 import com.littlehorizons.erp.controller.EnrollmentController;
 import com.littlehorizons.erp.controller.GuardianController;
 import com.littlehorizons.erp.controller.MainController;
@@ -13,6 +14,7 @@ import com.littlehorizons.erp.controller.SubjectEnrollmentController;
 import com.littlehorizons.erp.controller.TeacherController;
 import com.littlehorizons.erp.service.AcademicRecordService;
 import com.littlehorizons.erp.service.AssignmentService;
+import com.littlehorizons.erp.service.AttendanceService;
 import com.littlehorizons.erp.service.EnrollmentService;
 import com.littlehorizons.erp.service.GuardianService;
 import com.littlehorizons.erp.service.StudentGuardianService;
@@ -24,6 +26,7 @@ import com.littlehorizons.erp.util.ConsoleInput;
 import com.littlehorizons.erp.view.AcademicRecordView;
 import com.littlehorizons.erp.view.AcademicView;
 import com.littlehorizons.erp.view.AssignmentView;
+import com.littlehorizons.erp.view.AttendanceView;
 import com.littlehorizons.erp.view.EnrollmentView;
 import com.littlehorizons.erp.view.GuardianView;
 import com.littlehorizons.erp.view.MainView;
@@ -67,9 +70,12 @@ public class Main {
         AcademicRecordController academicRecordController = new AcademicRecordController(
                 new AcademicRecordService(), studentService, teacherService, subjectService,
                 new AcademicRecordView(input));
+        AttendanceController attendanceController = new AttendanceController(
+                new AttendanceService(), studentService, teacherService, subjectService,
+                new AttendanceView(input));
         AcademicController academicController = new AcademicController(
                 new AcademicView(input), subjectController, enrollmentController,
-                subjectEnrollmentController, academicRecordController);
+                subjectEnrollmentController, academicRecordController, attendanceController);
 
         AssignmentController assignmentController = new AssignmentController(
                 new AssignmentService(), teacherService, subjectService,

@@ -12,16 +12,19 @@ public class AcademicController {
     private final EnrollmentController enrollmentController;
     private final SubjectEnrollmentController subjectEnrollmentController;
     private final AcademicRecordController academicRecordController;
+    private final AttendanceController attendanceController;
 
     public AcademicController(AcademicView academicView, SubjectController subjectController,
             EnrollmentController enrollmentController,
             SubjectEnrollmentController subjectEnrollmentController,
-            AcademicRecordController academicRecordController) {
+            AcademicRecordController academicRecordController,
+            AttendanceController attendanceController) {
         this.academicView = academicView;
         this.subjectController = subjectController;
         this.enrollmentController = enrollmentController;
         this.subjectEnrollmentController = subjectEnrollmentController;
         this.academicRecordController = academicRecordController;
+        this.attendanceController = attendanceController;
     }
 
     public void run() {
@@ -33,6 +36,7 @@ public class AcademicController {
                 case 2 -> enrollmentController.run();
                 case 3 -> subjectEnrollmentController.run();
                 case 4 -> academicRecordController.run();
+                case 5 -> attendanceController.run();
                 case 0 -> running = false;
                 default -> academicView.showError("Opción inválida.");
             }

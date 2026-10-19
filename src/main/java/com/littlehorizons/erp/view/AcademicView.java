@@ -22,6 +22,7 @@ public class AcademicView {
         System.out.println("2. Matrículas");
         System.out.println("3. Inscripciones en materias");
         System.out.println("4. Calificaciones y promedios");
+        System.out.println("5. Asistencia");
         System.out.println("0. Volver al menú principal");
         return input.readMenuOption("Seleccione una opción: ");
     }
