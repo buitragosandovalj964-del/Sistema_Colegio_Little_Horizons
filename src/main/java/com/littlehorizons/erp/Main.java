@@ -23,6 +23,7 @@ import com.littlehorizons.erp.service.ClubService;
 import com.littlehorizons.erp.service.EnrollmentService;
 import com.littlehorizons.erp.service.EventService;
 import com.littlehorizons.erp.service.GuardianService;
+import com.littlehorizons.erp.service.LoanService;
 import com.littlehorizons.erp.service.ResourceService;
 import com.littlehorizons.erp.service.StudentGuardianService;
 import com.littlehorizons.erp.service.StudentService;
@@ -101,8 +102,9 @@ public class Main {
         ExtracurricularController extracurricularController = new ExtracurricularController(
                 new ExtracurricularView(input), clubController, eventController);
 
-        ResourceController resourceController =
-                new ResourceController(new ResourceService(), new ResourceView(input));
+        ResourceController resourceController = new ResourceController(
+                new ResourceService(), new LoanService(), studentService, teacherService,
+                new ResourceView(input));
 
         MainController mainController = new MainController(new MainView(input),
                 studentController, academicController, teacherController,
