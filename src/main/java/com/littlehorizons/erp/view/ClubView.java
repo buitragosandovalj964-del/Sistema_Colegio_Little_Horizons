@@ -7,6 +7,7 @@ import com.littlehorizons.erp.service.ClubService;
 import com.littlehorizons.erp.service.FieldValidator;
 import com.littlehorizons.erp.service.StudentService;
 import com.littlehorizons.erp.service.TeacherService;
+import com.littlehorizons.erp.util.ConsoleFormat;
 import com.littlehorizons.erp.util.ConsoleInput;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,7 +22,7 @@ public class ClubView {
      */
     public record DocumentId(String type, String number) { }
 
-    private static final String SEPARATOR = "-".repeat(78);
+    private static final String SEPARATOR = "-".repeat(90);
 
     private final ConsoleInput input;
 
@@ -43,7 +44,7 @@ public class ClubView {
         System.out.println("7. Retirar estudiante de un club");
         System.out.println("8. Ver clubes de un estudiante");
         System.out.println("9. Eliminar club (registros creados por error)");
-        System.out.println("0. Volver al menú principal");
+        System.out.println("0. Volver");
         return input.readMenuOption("Seleccione una opción: ");
     }
 
@@ -128,13 +129,21 @@ public class ClubView {
             showMessage("No hay clubes registrados.");
             return;
         }
-        System.out.printf("%-5s %-28s %-8s %-8s %-24s %-22s%n",
+        System.out.println(SEPARATOR);
+        System.out.printf("%-5s %-32s %-8s %-8s %-24s %-22s%n",
                 "ID", "NOMBRE", "CUPO", "ACTIVO", "ENCARGADO", "HORARIO");
-        clubs.forEach(club -> System.out.printf("%-5d %-28s %-8s %-8s %-24s %-22s%n",
-                club.getId(), club.getName(),
+        System.out.println(SEPARATOR);
+        clubs.forEach(club -> System.out.printf("%-5d %-32s %-8s %-8s %-24s %-22s%n",
+                club.getId(), ConsoleFormat.fit(club.getName(), 32),
                 club.getActiveMembers() + "/" + club.getMaxCapacity(),
-                club.isActive() ? "Sí" : "No", supervisorName(club),
-                club.getMeetingSchedule() == null ? "-" : club.getMeetingSchedule()));
+                club.isActive() ? "Sí" : "No",
+                ConsoleFormat.fit(supervisorName(club), 24),
+                ConsoleFormat.fit(club.getMeetingSchedule(), 22)));
+        System.out.println(SEPARATOR);
+        long active = clubs.stream().filter(Club::isActive).count();
+        int members = clubs.stream().mapToInt(Club::getActiveMembers).sum();
+        System.out.println("Total: " + clubs.size() + " clubes | Activos: " + active
+                + " | Miembros activos: " + members);
     }
 
     public void showClubDetail(Club club, List<ClubMembership> members) {
@@ -150,12 +159,16 @@ public class ClubView {
             showMessage("Este club todavía no tiene miembros.");
             return;
         }
-        System.out.printf("%-38s %-12s %-12s %-12s%n",
+        System.out.printf("%-40s %-12s %-12s %-12s%n",
                 "ESTUDIANTE", "INGRESO", "ESTADO", "RETIRO");
-        members.forEach(member -> System.out.printf("%-38s %-12s %-12s %-12s%n",
-                member.getStudent().getFullName(), member.getJoinDate(), member.getStatus(),
+        members.forEach(member -> System.out.printf("%-40s %-12s %-12s %-12s%n",
+                ConsoleFormat.fit(member.getStudent().getFullName(), 40), member.getJoinDate(),
+                member.getStatus(),
                 member.getWithdrawalDate() == null ? "-" : member.getWithdrawalDate()));
         System.out.println(SEPARATOR);
+        long active = members.stream().filter(member -> "Activa".equals(member.getStatus())).count();
+        System.out.println("Membresías: " + members.size() + " | Activas: " + active
+                + " | Retiradas: " + (members.size() - active));
     }
 
     public void showClubsOfStudent(Student student, List<ClubMembership> memberships) {
@@ -166,9 +179,10 @@ public class ClubView {
             showMessage("Este estudiante no pertenece ni perteneció a ningún club.");
             return;
         }
-        System.out.printf("%-28s %-12s %-12s %-12s%n", "CLUB", "INGRESO", "ESTADO", "RETIRO");
-        memberships.forEach(membership -> System.out.printf("%-28s %-12s %-12s %-12s%n",
-                membership.getClub() == null ? "-" : membership.getClub().getName(),
+        System.out.printf("%-32s %-12s %-12s %-12s%n", "CLUB", "INGRESO", "ESTADO", "RETIRO");
+        memberships.forEach(membership -> System.out.printf("%-32s %-12s %-12s %-12s%n",
+                ConsoleFormat.fit(membership.getClub() == null ? null
+                        : membership.getClub().getName(), 32),
                 membership.getJoinDate(), membership.getStatus(),
                 membership.getWithdrawalDate() == null ? "-" : membership.getWithdrawalDate()));
         System.out.println(SEPARATOR);

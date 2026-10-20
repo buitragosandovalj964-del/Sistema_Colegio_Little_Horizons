@@ -12,15 +12,18 @@ public class MainController {
     private final AcademicController academicController;
     private final TeacherController teacherController;
     private final ExtracurricularController extracurricularController;
+    private final ResourceController resourceController;
 
     public MainController(MainView mainView, StudentController studentController,
             AcademicController academicController, TeacherController teacherController,
-            ExtracurricularController extracurricularController) {
+            ExtracurricularController extracurricularController,
+            ResourceController resourceController) {
         this.mainView = mainView;
         this.studentController = studentController;
         this.academicController = academicController;
         this.teacherController = teacherController;
         this.extracurricularController = extracurricularController;
+        this.resourceController = resourceController;
     }
 
     public void run() {
@@ -32,7 +35,8 @@ public class MainController {
                 case 2 -> academicController.run();
                 case 3 -> teacherController.run();
                 case 4 -> extracurricularController.run();
-                case 5, 6, 7 ->
+                case 6 -> resourceController.run();
+                case 5, 7 ->
                     mainView.showMessage("Este módulo aún está en construcción.");
                 case 8 -> running = false;
                 default -> mainView.showError("Opción inválida.");

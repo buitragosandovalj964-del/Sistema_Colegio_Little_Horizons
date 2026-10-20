@@ -7,6 +7,7 @@ import com.littlehorizons.erp.service.EventService;
 import com.littlehorizons.erp.service.FieldValidator;
 import com.littlehorizons.erp.service.StudentService;
 import com.littlehorizons.erp.service.TeacherService;
+import com.littlehorizons.erp.util.ConsoleFormat;
 import com.littlehorizons.erp.util.ConsoleInput;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,7 +24,7 @@ public class EventView {
     public record DocumentId(String type, String number) { }
 
     private static final String POSITIVE_NUMBER_PATTERN = "[1-9]\\d{0,8}";
-    private static final String SEPARATOR = "-".repeat(78);
+    private static final String SEPARATOR = "-".repeat(90);
 
     private final ConsoleInput input;
 
@@ -161,12 +162,19 @@ public class EventView {
             showMessage("No hay eventos registrados.");
             return;
         }
-        System.out.printf("%-5s %-12s %-30s %-12s %-12s %-8s %-8s%n",
+        System.out.println(SEPARATOR);
+        System.out.printf("%-5s %-12s %-40s %-12s %-12s %-8s %-8s%n",
                 "ID", "FECHA", "NOMBRE", "TIPO", "COMPETENCIA", "PARTIC.", "ACTIVO");
-        events.forEach(event -> System.out.printf("%-5d %-12s %-30s %-12s %-12s %-8d %-8s%n",
-                event.getId(), event.getDate(), event.getName(), event.getType(),
-                event.isHasCompetition() ? "Sí" : "No", event.getParticipantCount(),
-                event.isActive() ? "Sí" : "No"));
+        System.out.println(SEPARATOR);
+        events.forEach(event -> System.out.printf("%-5d %-12s %-40s %-12s %-12s %-8d %-8s%n",
+                event.getId(), event.getDate(), ConsoleFormat.fit(event.getName(), 40),
+                event.getType(), event.isHasCompetition() ? "Sí" : "No",
+                event.getParticipantCount(), event.isActive() ? "Sí" : "No"));
+        System.out.println(SEPARATOR);
+        long active = events.stream().filter(Event::isActive).count();
+        long withCompetition = events.stream().filter(Event::isHasCompetition).count();
+        System.out.println("Total: " + events.size() + " eventos | Activos: " + active
+                + " | Con competencia: " + withCompetition);
     }
 
     public void showEventDetail(Event event, List<EventParticipation> participants) {
@@ -183,11 +191,12 @@ public class EventView {
             showMessage("Este evento todavía no tiene participantes.");
             return;
         }
-        System.out.printf("%-38s %-14s %-12s %-20s%n",
+        System.out.printf("%-40s %-14s %-12s %-20s%n",
                 "ESTUDIANTE", "ROL", "POSICIÓN", "OBSERVACIONES");
-        participants.forEach(participation -> System.out.printf("%-38s %-14s %-12s %-20s%n",
-                participation.getStudent().getFullName(), participation.getRole(),
-                valueOrDash(participation.getPosition()), valueOrDash(participation.getNotes())));
+        participants.forEach(participation -> System.out.printf("%-40s %-14s %-12s %-20s%n",
+                ConsoleFormat.fit(participation.getStudent().getFullName(), 40),
+                participation.getRole(), valueOrDash(participation.getPosition()),
+                ConsoleFormat.fit(participation.getNotes(), 20)));
         System.out.println(SEPARATOR);
         System.out.println("Total de participantes: " + participants.size());
     }
@@ -200,15 +209,17 @@ public class EventView {
             showMessage("Este estudiante no ha participado en ningún evento.");
             return;
         }
-        System.out.printf("%-12s %-30s %-12s %-14s %-12s%n",
+        System.out.printf("%-12s %-40s %-12s %-14s %-12s%n",
                 "FECHA", "EVENTO", "TIPO", "ROL", "POSICIÓN");
         participations.forEach(participation -> System.out.printf(
-                "%-12s %-30s %-12s %-14s %-12s%n",
+                "%-12s %-40s %-12s %-14s %-12s%n",
                 participation.getEvent() == null ? "-" : participation.getEvent().getDate(),
-                participation.getEvent() == null ? "-" : participation.getEvent().getName(),
+                ConsoleFormat.fit(participation.getEvent() == null ? null
+                        : participation.getEvent().getName(), 40),
                 participation.getEvent() == null ? "-" : participation.getEvent().getType(),
                 participation.getRole(), valueOrDash(participation.getPosition())));
         System.out.println(SEPARATOR);
+        System.out.println("Total: " + participations.size() + " participaciones");
     }
 
     private String valueOrDash(String value) {
