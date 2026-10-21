@@ -8,8 +8,10 @@ import com.littlehorizons.erp.controller.ClubController;
 import com.littlehorizons.erp.controller.EnrollmentController;
 import com.littlehorizons.erp.controller.EventController;
 import com.littlehorizons.erp.controller.ExtracurricularController;
+import com.littlehorizons.erp.controller.FinancialController;
 import com.littlehorizons.erp.controller.GuardianController;
 import com.littlehorizons.erp.controller.MainController;
+import com.littlehorizons.erp.controller.ReportController;
 import com.littlehorizons.erp.controller.ResourceController;
 import com.littlehorizons.erp.controller.StudentController;
 import com.littlehorizons.erp.controller.StudentGuardianController;
@@ -24,6 +26,7 @@ import com.littlehorizons.erp.service.EnrollmentService;
 import com.littlehorizons.erp.service.EventService;
 import com.littlehorizons.erp.service.GuardianService;
 import com.littlehorizons.erp.service.LoanService;
+import com.littlehorizons.erp.service.PaymentService;
 import com.littlehorizons.erp.service.ResourceService;
 import com.littlehorizons.erp.service.StudentGuardianService;
 import com.littlehorizons.erp.service.StudentService;
@@ -39,8 +42,10 @@ import com.littlehorizons.erp.view.ClubView;
 import com.littlehorizons.erp.view.EnrollmentView;
 import com.littlehorizons.erp.view.EventView;
 import com.littlehorizons.erp.view.ExtracurricularView;
+import com.littlehorizons.erp.view.FinancialView;
 import com.littlehorizons.erp.view.GuardianView;
 import com.littlehorizons.erp.view.MainView;
+import com.littlehorizons.erp.view.ReportView;
 import com.littlehorizons.erp.view.ResourceView;
 import com.littlehorizons.erp.view.StudentGuardianView;
 import com.littlehorizons.erp.view.StudentView;
@@ -61,13 +66,22 @@ public class Main {
         GuardianService guardianService = new GuardianService();
         TeacherService teacherService = new TeacherService();
         SubjectService subjectService = new SubjectService();
-        GuardianView guardianView = new GuardianView(input);
+        PaymentService paymentService = new PaymentService();
+        LoanService loanService = new LoanService();
+        AttendanceService attendanceService = new AttendanceService();
+        ClubService clubService = new ClubService();
+        EventService eventService = new EventService();
+        ResourceService resourceService = new ResourceService();
 
+        GuardianView guardianView = new GuardianView(input);
         GuardianController guardianController =
                 new GuardianController(guardianService, guardianView);
+
+        StudentGuardianService studentGuardianService = new StudentGuardianService();
         StudentGuardianController studentGuardianController = new StudentGuardianController(
-                new StudentGuardianService(), studentService, guardianService,
+                studentGuardianService, studentService, guardianService,
                 new StudentGuardianView(input), guardianView);
+
         StudentController studentController = new StudentController(
                 studentService, new StudentView(input), guardianController,
                 studentGuardianController);
@@ -83,7 +97,7 @@ public class Main {
                 new AcademicRecordService(), studentService, teacherService, subjectService,
                 new AcademicRecordView(input));
         AttendanceController attendanceController = new AttendanceController(
-                new AttendanceService(), studentService, teacherService, subjectService,
+                attendanceService, studentService, teacherService, subjectService,
                 new AttendanceView(input));
         AcademicController academicController = new AcademicController(
                 new AcademicView(input), subjectController, enrollmentController,
@@ -96,19 +110,29 @@ public class Main {
                 teacherService, new TeacherView(input), assignmentController);
 
         ClubController clubController = new ClubController(
-                new ClubService(), studentService, teacherService, new ClubView(input));
+                clubService, studentService, teacherService, new ClubView(input));
         EventController eventController = new EventController(
-                new EventService(), studentService, teacherService, new EventView(input));
+                eventService, studentService, teacherService, new EventView(input));
         ExtracurricularController extracurricularController = new ExtracurricularController(
                 new ExtracurricularView(input), clubController, eventController);
 
+        FinancialController financialController = new FinancialController(
+                paymentService, studentService, guardianService, studentGuardianService,
+                new FinancialView(input));
+
         ResourceController resourceController = new ResourceController(
-                new ResourceService(), new LoanService(), studentService, teacherService,
+                resourceService, loanService, studentService, teacherService,
                 new ResourceView(input));
+
+        ReportController reportController = new ReportController(
+                attendanceService, paymentService, loanService, studentService, teacherService,
+                subjectService, clubService, eventService, resourceService,
+                new ReportView(input));
 
         MainController mainController = new MainController(new MainView(input),
                 studentController, academicController, teacherController,
-                extracurricularController, resourceController);
+                extracurricularController, financialController, resourceController,
+                reportController);
 
         mainController.run();
         System.out.println("Hasta pronto.");

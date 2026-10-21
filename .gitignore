@@ -10,3 +10,6 @@ error_log.txt
 
 # Database credentials (we create this file in Phase 2)
 db.properties
+
+# Invoices directory
+facturas/
