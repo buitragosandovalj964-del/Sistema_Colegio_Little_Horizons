@@ -28,13 +28,17 @@ public class GuardianService {
     }
 
     public void registerGuardian(Guardian guardian) throws ValidationException, SQLException {
-        validate(guardian);
-        if (guardianDao.findByDocument(guardian.getDocumentType(),
-                guardian.getDocumentNumber()).isPresent()) {
-            throw new ValidationException("Ya existe un acudiente con el documento "
-                    + guardian.getDocumentType() + " " + guardian.getDocumentNumber() + ".");
-        }
+        validateForRegistration(guardian);
         guardianDao.insert(guardian);
+    }
+
+    public void validateForRegistration(Guardian guardian)
+            throws ValidationException, SQLException {
+        validate(guardian);
+        if (guardianDao.findByDocumentNumber(guardian.getDocumentNumber()).isPresent()) {
+            throw new ValidationException("Ya existe un acudiente con el número de documento "
+                    + guardian.getDocumentNumber() + ".");
+        }
     }
 
     public void updateGuardian(Guardian guardian) throws ValidationException, SQLException {
@@ -43,11 +47,11 @@ public class GuardianService {
                     "El acudiente no tiene id, por lo que no se puede actualizar.");
         }
         validate(guardian);
-        Optional<Guardian> sameDocument = guardianDao.findByDocument(
-                guardian.getDocumentType(), guardian.getDocumentNumber());
+        Optional<Guardian> sameDocument = guardianDao.findByDocumentNumber(
+                guardian.getDocumentNumber());
         if (sameDocument.isPresent() && !sameDocument.get().getId().equals(guardian.getId())) {
-            throw new ValidationException("Otro acudiente ya usa el documento "
-                    + guardian.getDocumentType() + " " + guardian.getDocumentNumber() + ".");
+            throw new ValidationException("Otro acudiente ya usa el número de documento "
+                    + guardian.getDocumentNumber() + ".");
         }
         if (!guardianDao.update(guardian)) {
             throw new ValidationException(
@@ -75,6 +79,10 @@ public class GuardianService {
     public Optional<Guardian> findByDocument(String documentType, String documentNumber)
             throws SQLException {
         return guardianDao.findByDocument(documentType, documentNumber);
+    }
+
+    public Optional<Guardian> findByDocumentNumber(String documentNumber) throws SQLException {
+        return guardianDao.findByDocumentNumber(documentNumber);
     }
 
     public List<Guardian> listGuardians() throws SQLException {

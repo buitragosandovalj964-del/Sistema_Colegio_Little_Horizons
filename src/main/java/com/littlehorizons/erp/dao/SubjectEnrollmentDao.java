@@ -95,10 +95,15 @@ public class SubjectEnrollmentDao {
      */
     public int updateStatusForYear(int studentId, int academicYear, String status)
             throws SQLException {
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     UPDATE_STATUS_FOR_YEAR_SQL)) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            return updateStatusForYear(connection, studentId, academicYear, status);
+        }
+    }
 
+    public int updateStatusForYear(Connection connection, int studentId, int academicYear,
+            String status) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                UPDATE_STATUS_FOR_YEAR_SQL)) {
             statement.setString(1, status);
             statement.setInt(2, studentId);
             statement.setInt(3, academicYear);

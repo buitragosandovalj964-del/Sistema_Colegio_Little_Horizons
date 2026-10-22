@@ -297,7 +297,7 @@ public class ConsoleInput {
     }
 
     public boolean confirm(String question) {
-        return askYesNo(question + " (si/no): ", false);
+        return askYesNo(question + " (si/no): ", true);
     }
 
     private boolean askYesNo(String fullPrompt, boolean allowCancel) {

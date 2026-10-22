@@ -63,7 +63,7 @@ public class AcademicRecordController {
         try {
             operation.run();
         } catch (ConsoleInput.CancelledException e) {
-            view.showMessage("Operación cancelada. No se guardó ningún cambio.");
+            view.showMessage("Operación cancelada. Los cambios completados anteriormente se conservan.");
         } catch (ValidationException e) {
             view.showError(e.getMessage());
         } catch (SQLException e) {

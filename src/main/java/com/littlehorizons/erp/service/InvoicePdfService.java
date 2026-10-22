@@ -10,13 +10,21 @@ import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,10 +38,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumMap;
+import java.util.Map;
+import javax.imageio.ImageIO;
 
 /**
- * Generates official-looking electronic invoices in PDF format conforming to
- * DIAN (Colombian tax authority) educational invoicing standards.
+ * Generates invoice demonstration PDFs with simulated DIAN elements.
+ * The generated documents are not submitted to or validated by DIAN.
  */
 public class InvoicePdfService {
 
@@ -55,8 +66,8 @@ public class InvoicePdfService {
         }
 
         File directory = new File(INVOICE_DIR);
-        if (!directory.exists()) {
-            directory.mkdirs();
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("No se pudo crear la carpeta para guardar las facturas.");
         }
 
         String invoiceNumber = "FE-" + String.format("%05d", payment.getId());
@@ -73,6 +84,7 @@ public class InvoicePdfService {
     private void createPdf(File file, Payment payment, String invoiceNumber, String cufe)
             throws IOException, DocumentException {
 
+        byte[] qrImageBytes = createQrImage(payment, invoiceNumber, cufe);
         Document document = new Document(PageSize.A4, 36, 36, 36, 36);
         PdfWriter.getInstance(document, new FileOutputStream(file));
         document.open();
@@ -246,8 +258,9 @@ public class InvoicePdfService {
         document.add(new Paragraph(" "));
 
         // DIAN Compliance Footer Table
-        PdfPTable dianTable = new PdfPTable(1);
+        PdfPTable dianTable = new PdfPTable(2);
         dianTable.setWidthPercentage(100);
+        dianTable.setWidths(new float[]{78, 22});
 
         PdfPCell dianCell = new PdfPCell();
         dianCell.setBackgroundColor(new Color(248, 249, 250));
@@ -255,15 +268,74 @@ public class InvoicePdfService {
         dianCell.addElement(new Paragraph("INFORMACION DE CONTROL FISCAL Y VALIDEZ DIAN (SIMULADO)", boldFont));
         dianCell.addElement(new Paragraph(DIAN_RESOLUTION, smallFont));
         dianCell.addElement(new Paragraph("CUFE: " + cufe, smallFont));
-        dianCell.addElement(new Paragraph("Validacion en linea DIAN: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=" + cufe, smallFont));
-        dianCell.addElement(new Paragraph("[ CODIGO QR SIMULADO - FACTURA ELECTRONICA VALIDA ]", FontFactory.getFont(FontFactory.COURIER_BOLD, 8, Color.DARK_GRAY)));
+        dianCell.addElement(new Paragraph(
+                "Documento academico de demostracion; no fue transmitido ni validado por la DIAN.",
+                smallFont));
         dianTable.addCell(dianCell);
+
+        PdfPCell qrCell = new PdfPCell();
+        qrCell.setBackgroundColor(new Color(248, 249, 250));
+        qrCell.setPadding(6);
+        qrCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        qrCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        qrCell.addElement(new Paragraph("QR SIMULADO", boldFont));
+        Image qrImage = Image.getInstance(qrImageBytes);
+        qrImage.scaleToFit(90, 90);
+        qrImage.setAlignment(Element.ALIGN_CENTER);
+        qrCell.addElement(qrImage);
+        dianTable.addCell(qrCell);
+
         document.add(dianTable);
 
         document.close();
     }
 
-    private String calculateCufe(String invoiceNumber, String nit, LocalDate date, BigDecimal amount) {
+    private byte[] createQrImage(Payment payment, String invoiceNumber, String cufe)
+            throws IOException {
+        String payload = String.join("\n",
+                "FACTURA ELECTRONICA - DEMOSTRACION ACADEMICA (NO VALIDA DIAN)",
+                "Numero: " + invoiceNumber,
+                "Fecha: " + payment.getPaymentDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                "Emisor: " + COMPANY_NAME,
+                "NIT emisor: " + COMPANY_NIT,
+                "Adquiriente: " + (payment.getGuardian() == null
+                        ? "Pago directo" : payment.getGuardian().getFullName()),
+                "Estudiante: " + (payment.getStudent() == null
+                        ? "No especificado" : payment.getStudent().getFullName()),
+                "Concepto: " + (payment.getConcept() == null
+                        ? "Servicio Educativo" : payment.getConcept().getName()),
+                "Recibo: " + (payment.getReceiptNumber() == null
+                        ? "No especificado" : payment.getReceiptNumber()),
+                "Total: COP " + payment.getAmountPaid().toPlainString(),
+                "CUFE simulado: " + cufe);
+
+        Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
+        hints.put(EncodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.name());
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
+        hints.put(EncodeHintType.MARGIN, 2);
+
+        try {
+            var matrix = new QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, 300, 300, hints);
+            BufferedImage image = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
+            for (int y = 0; y < matrix.getHeight(); y++) {
+                for (int x = 0; x < matrix.getWidth(); x++) {
+                    image.setRGB(x, y, matrix.get(x, y) ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
+                }
+            }
+
+            try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                if (!ImageIO.write(image, "PNG", output)) {
+                    throw new IOException("No se encontro un codificador PNG para el codigo QR.");
+                }
+                return output.toByteArray();
+            }
+        } catch (WriterException e) {
+            throw new IOException("No se pudo generar el codigo QR de la factura.", e);
+        }
+    }
+
+    private String calculateCufe(String invoiceNumber, String nit, LocalDate date, BigDecimal amount)
+            throws IOException {
         String raw = invoiceNumber + "|" + nit + "|" + date.toString() + "|" + amount.toPlainString() + "|LittleHorizonsERP";
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -276,11 +348,12 @@ public class InvoicePdfService {
             }
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            return Integer.toHexString(raw.hashCode());
+            throw new IOException("No se pudo calcular el identificador SHA-256 de la factura.", e);
         }
     }
 
-    private void saveInvoiceRecord(int paymentId, String invoiceNumber, LocalDate date, String cufe, String fileName, String path) {
+    private void saveInvoiceRecord(int paymentId, String invoiceNumber, LocalDate date,
+            String cufe, String fileName, String path) throws SQLException {
         String sql = "INSERT INTO facturas (numero_factura, id_pago, fecha_emision, cufe, nombre_archivo_pdf, ruta_archivo) "
                    + "VALUES (?, ?, ?, ?, ?, ?) "
                    + "ON DUPLICATE KEY UPDATE cufe = VALUES(cufe), nombre_archivo_pdf = VALUES(nombre_archivo_pdf), ruta_archivo = VALUES(ruta_archivo)";
@@ -293,9 +366,6 @@ public class InvoicePdfService {
             statement.setString(5, fileName);
             statement.setString(6, path);
             statement.executeUpdate();
-        } catch (SQLException e) {
-            // Non-fatal if table doesn't exist yet; error log will catch it if needed.
         }
     }
 }
-

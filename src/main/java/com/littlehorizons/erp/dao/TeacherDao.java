@@ -31,6 +31,9 @@ public class TeacherDao {
     private static final String SELECT_BY_DOCUMENT_SQL =
             SELECT_BASE_SQL + " WHERE tipo_documento = ? AND numero_documento = ?";
 
+    private static final String SELECT_BY_DOCUMENT_NUMBER_SQL =
+            SELECT_BASE_SQL + " WHERE numero_documento = ?";
+
     private static final String SELECT_BY_EMAIL_SQL =
             SELECT_BASE_SQL + " WHERE correo_electronico = ?";
 
@@ -102,6 +105,17 @@ public class TeacherDao {
 
             statement.setString(1, documentType);
             statement.setString(2, documentNumber);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? Optional.of(mapRow(resultSet)) : Optional.empty();
+            }
+        }
+    }
+
+    public Optional<Teacher> findByDocumentNumber(String documentNumber) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     SELECT_BY_DOCUMENT_NUMBER_SQL)) {
+            statement.setString(1, documentNumber);
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next() ? Optional.of(mapRow(resultSet)) : Optional.empty();
             }

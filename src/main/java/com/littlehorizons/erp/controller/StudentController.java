@@ -55,7 +55,8 @@ public class StudentController {
         try {
             operation.run();
         } catch (ConsoleInput.CancelledException e) {
-            studentView.showMessage("Operación cancelada. No se guardó ningún cambio.");
+            studentView.showMessage(
+                    "Operación actual cancelada. Los cambios completados anteriormente se conservan.");
         } catch (ValidationException e) {
             studentView.showError(e.getMessage());
         } catch (SQLException e) {
@@ -67,15 +68,18 @@ public class StudentController {
 
     private void registerStudent() throws ValidationException, SQLException {
         Student student = studentView.askNewStudent();
-        studentService.registerStudent(student);
+        studentView.showMessage("Cada estudiante debe tener al menos un acudiente vinculado.");
+        StudentGuardianController.GuardianLinkPlan guardianPlan =
+                studentGuardianController.prepareFirstGuardianLink();
+        studentGuardianController.registerStudentWithFirstGuardian(student, guardianPlan);
         studentView.showMessage("Estudiante registrado con id " + student.getId() + ".");
-        if (studentView.confirm("¿Desea vincular ahora un acudiente a este estudiante?")) {
-            try {
+        try {
+            if (studentView.confirm("¿Desea vincular otro acudiente a este estudiante?")) {
                 studentGuardianController.linkGuardiansInteractively(student);
-            } catch (ConsoleInput.CancelledException e) {
-                studentView.showMessage("Vínculo cancelado. El estudiante quedó registrado "
-                        + "sin acudiente; puede vincularlo después desde la opción 8.");
             }
+        } catch (ConsoleInput.CancelledException e) {
+            studentView.showMessage("El estudiante y su primer acudiente quedaron registrados. "
+                    + "Puede agregar otro acudiente después desde la opción 8.");
         }
     }
 

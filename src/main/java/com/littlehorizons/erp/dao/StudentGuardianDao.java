@@ -59,17 +59,22 @@ public class StudentGuardianDao {
     public void link(int studentId, int guardianId, boolean primary, boolean emergencyContact)
             throws SQLException {
         inTransaction(connection -> {
-            if (primary) {
-                clearPrimary(connection, studentId);
-            }
-            try (PreparedStatement statement = connection.prepareStatement(INSERT_SQL)) {
-                statement.setInt(1, studentId);
-                statement.setInt(2, guardianId);
-                statement.setBoolean(3, primary);
-                statement.setBoolean(4, emergencyContact);
-                statement.executeUpdate();
-            }
+            link(connection, studentId, guardianId, primary, emergencyContact);
         });
+    }
+
+    public void link(Connection connection, int studentId, int guardianId, boolean primary,
+            boolean emergencyContact) throws SQLException {
+        if (primary) {
+            clearPrimary(connection, studentId);
+        }
+        try (PreparedStatement statement = connection.prepareStatement(INSERT_SQL)) {
+            statement.setInt(1, studentId);
+            statement.setInt(2, guardianId);
+            statement.setBoolean(3, primary);
+            statement.setBoolean(4, emergencyContact);
+            statement.executeUpdate();
+        }
     }
 
     public void updateFlags(int studentId, int guardianId, boolean primary,

@@ -50,7 +50,7 @@ public class SubjectController {
         try {
             operation.run();
         } catch (ConsoleInput.CancelledException e) {
-            subjectView.showMessage("Operación cancelada. No se guardó ningún cambio.");
+            subjectView.showMessage("Operación cancelada. Los cambios completados anteriormente se conservan.");
         } catch (ValidationException e) {
             subjectView.showError(e.getMessage());
         } catch (SQLException e) {

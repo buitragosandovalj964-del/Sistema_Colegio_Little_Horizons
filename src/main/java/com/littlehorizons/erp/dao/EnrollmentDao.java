@@ -73,9 +73,14 @@ public class EnrollmentDao {
      */
     public boolean updateStatus(int id, String status, LocalDate withdrawalDate, String notes)
             throws SQLException {
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_STATUS_SQL)) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            return updateStatus(connection, id, status, withdrawalDate, notes);
+        }
+    }
 
+    public boolean updateStatus(Connection connection, int id, String status,
+            LocalDate withdrawalDate, String notes) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(UPDATE_STATUS_SQL)) {
             statement.setString(1, status);
             statement.setDate(2, withdrawalDate == null ? null : Date.valueOf(withdrawalDate));
             statement.setString(3, notes);

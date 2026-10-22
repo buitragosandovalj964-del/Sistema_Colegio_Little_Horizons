@@ -32,6 +32,9 @@ public class StudentDao {
     private static final String SELECT_BY_DOCUMENT_SQL =
             SELECT_BASE_SQL + " WHERE tipo_documento = ? AND numero_documento = ?";
 
+    private static final String SELECT_BY_DOCUMENT_NUMBER_SQL =
+            SELECT_BASE_SQL + " WHERE numero_documento = ?";
+
     private static final String INSERT_SQL =
             "INSERT INTO estudiantes (tipo_documento, numero_documento, primer_nombre, "
             + "segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, "
@@ -51,13 +54,16 @@ public class StudentDao {
             "DELETE FROM estudiantes WHERE id_estudiante = ?";
 
     public void insert(Student student) throws SQLException {
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            insert(connection, student);
+        }
+    }
 
+    public void insert(Connection connection, Student student) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
             setStudentParameters(statement, student);
             statement.executeUpdate();
-
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     student.setId(generatedKeys.getInt(1));
@@ -67,9 +73,13 @@ public class StudentDao {
     }
 
     public boolean update(Student student) throws SQLException {
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            return update(connection, student);
+        }
+    }
 
+    public boolean update(Connection connection, Student student) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
             setStudentParameters(statement, student);
             statement.setInt(17, student.getId());
             return statement.executeUpdate() > 0;
@@ -103,6 +113,17 @@ public class StudentDao {
 
             statement.setString(1, documentType);
             statement.setString(2, documentNumber);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? Optional.of(mapRow(resultSet)) : Optional.empty();
+            }
+        }
+    }
+
+    public Optional<Student> findByDocumentNumber(String documentNumber) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     SELECT_BY_DOCUMENT_NUMBER_SQL)) {
+            statement.setString(1, documentNumber);
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next() ? Optional.of(mapRow(resultSet)) : Optional.empty();
             }

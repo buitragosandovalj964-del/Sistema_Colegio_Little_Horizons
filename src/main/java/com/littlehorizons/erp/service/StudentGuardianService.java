@@ -6,6 +6,8 @@ import com.littlehorizons.erp.dao.StudentGuardianDao;
 import com.littlehorizons.erp.model.Guardian;
 import com.littlehorizons.erp.model.Student;
 import com.littlehorizons.erp.model.StudentGuardian;
+import com.littlehorizons.erp.util.DatabaseConnection;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +73,51 @@ public class StudentGuardianService {
         }
         boolean makePrimary = primary || links.isEmpty();
         linkDao.link(student.getId(), guardian.getId(), makePrimary, emergencyContact);
+    }
+
+    public void registerStudentWithGuardian(Student student, Guardian guardian,
+            boolean registerGuardian, boolean primary, boolean emergencyContact)
+            throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                studentDao.insert(connection, student);
+                if (registerGuardian) {
+                    guardianDao.insert(connection, guardian);
+                }
+                linkDao.link(connection, student.getId(), guardian.getId(),
+                        true, emergencyContact);
+                connection.commit();
+            } catch (SQLException e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackError) {
+                    e.addSuppressed(rollbackError);
+                }
+                throw e;
+            }
+        }
+    }
+
+    public void registerNewGuardianLink(Student student, Guardian guardian, boolean primary,
+            boolean emergencyContact) throws SQLException {
+        boolean makePrimary = primary || findGuardiansOf(student.getId()).isEmpty();
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                guardianDao.insert(connection, guardian);
+                linkDao.link(connection, student.getId(), guardian.getId(),
+                        makePrimary, emergencyContact);
+                connection.commit();
+            } catch (SQLException e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackError) {
+                    e.addSuppressed(rollbackError);
+                }
+                throw e;
+            }
+        }
     }
 
     public void unlinkGuardian(Student student, Guardian guardian)

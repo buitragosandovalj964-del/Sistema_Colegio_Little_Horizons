@@ -78,7 +78,7 @@ public class FinancialController {
         try {
             operation.run();
         } catch (ConsoleInput.CancelledException e) {
-            view.showMessage("Operacion cancelada. No se guardo ningun cambio.");
+            view.showMessage("Operacion cancelada. Los cambios completados anteriormente se conservan.");
         } catch (ValidationException e) {
             view.showError(e.getMessage());
         } catch (SQLException e) {

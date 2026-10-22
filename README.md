@@ -18,7 +18,7 @@ El Colegio Internacional "Little Horizons" atiende a mas de 500 estudiantes desd
 ### Problemas que Resuelve
 1. **Perdida de Informacion Academica:** Sustituye los cuadernos fisicos por registros academicos inmutables en base de datos con control de periodos (I a IV y Final) y promedios calculados automaticamente.
 2. **Desorganizacion en Actividades Extracurriculares:** Administra catalogos de clubes con cupos maximos validados y seguimiento de participantes y posiciones en eventos competitivos.
-3. **Caos en la Facturacion y Cobros:** Automatiza la generacion de recibos de pago, identificacion inmediata de estudiantes morosos y emision de facturas electronicas en formato PDF bajo los estandares de la DIAN (CUFE y QR simulados).
+3. **Caos en la Facturacion y Cobros:** Automatiza la generacion de recibos de pago, identificacion inmediata de estudiantes morosos y emision de PDF de demostracion con datos de facturacion y elementos DIAN simulados.
 4. **Desperdicio de Recursos e Inventario:** Controla prestamos de libros, equipos de laboratorio y dispositivos tecnologicos para estudiantes y profesores con control estricto de fechas de vencimiento y bloqueos por mora.
 5. **Comunicacion y Control de Asistencia:** Registra asistencia diaria y genera alertas automaticas de ausentismo cronico (>3 ausencias por semana).
 
@@ -32,40 +32,42 @@ El Colegio Internacional "Little Horizons" atiende a mas de 500 estudiantes desd
 
 ---
 
-## 3. Autores
-- **Desarrollador / Estudiante:** Equipo de Desarrollo Campuslands / Little Horizons
-- **Institucion:** Campuslands & Colegio Internacional Little Horizons S.A.S.
-- **Correo Electronico:** contacto@campuslands.com / soporte@littlehorizons.edu.co
+## 3. Autor
+- **Estudiante:** Jhoan Sebastian Buitrago Sandoval
+- **Curso:** C3
+- **Skill:** Java
 
 ---
 
 ## 4. Tecnologias Utilizadas
-- **Lenguaje de Programacion:** Java 21 (LTS)
+- **Lenguaje de Programacion:** Java 17
 - **Herramienta de Construccion:** Apache Maven 3.9+
-- **IDE Utilizado:** Apache NetBeans IDE 3.1
+- **IDE Utilizado:** Apache NetBeans IDE 31
 - **Base de Datos:** MySQL Server 8.0 o superior
 - **Librerias Externas:**
   - `mysql:mysql-connector-j:9.7.0` (Conector JDBC oficial para MySQL)
-  - `com.github.librepdf:openpdf:1.3.40` (Generacion de documentos PDF para Facturacion Electronica DIAN)
+  - `com.github.librepdf:openpdf:1.3.40` (Generacion de documentos PDF)
+  - `com.google.zxing:core:3.5.3` (Generacion de codigos QR)
 
 ---
 
 ## 5. Requerimientos Previos
-- **Java Development Kit (JDK):** Version 21 o superior instalada y configurada en la variable `JAVA_HOME`.
+- **Java Development Kit (JDK):** Version 17 o superior instalada y configurada en la variable `JAVA_HOME`.
 - **Apache Maven:** Version 3.8 o superior (o el Maven embebido en NetBeans).
 - **Motor de Base de Datos:** **MySQL Server 8.0 o superior (REQUERIDO)** debido al uso de restricciones `CHECK` nativas (`CHECK (valor_nota >= 0.0 AND valor_nota <= 5.0)`).
-- **IDE:** Apache NetBeans IDE (o IntelliJ IDEA / VS Code con extensiones Java).
+- **IDE:** Apache NetBeans IDE 31, utilizado para desarrollar y ejecutar el proyecto.
 
 ---
 
 ## 6. Configuracion de la Base de Datos
 
-### 6.1. Creacion de la base de datos
-Ejecutar el script completo de creacion ubicado en `docs/database.sql` en su cliente MySQL preferido (DBeaver, MySQL Workbench o consola):
+### 6.1. Creacion de la base de datos y carga de datos de prueba
+El esquema de las tablas fue proporcionado por el profesor y se incluye en `docs/database.sql`. Los datos de prueba elaborados para el proyecto estan en `docs/datos_prueba.sql`. Ejecutar ambos scripts, en este orden, desde DBeaver, MySQL Workbench o la consola:
 ```bash
 mysql -u root -p < docs/database.sql
+mysql -u root -p erp_little_horizons < docs/datos_prueba.sql
 ```
-El script creara la base de datos `erp_little_horizons` con las 22 tablas normalizadas y cargara 30 registros de prueba coherentes por tabla principal.
+El primer script crea la base de datos `erp_little_horizons` y sus 22 tablas. El segundo carga los datos de prueba; contiene al menos 30 registros en cada tabla principal solicitada. **Importante:** `database.sql` elimina y vuelve a crear la base de datos, asi que no debe ejecutarse sobre una base existente cuyos datos se quieran conservar.
 
 ### 6.2. Configuracion de credenciales
 Las credenciales de acceso a la base de datos estan desacopladas del codigo fuente y no se incluyen en el control de versiones Git por seguridad.
@@ -88,24 +90,24 @@ El controlador `mysql-connector-j` se descarga e instala automaticamente mediant
 
 ### 7.1. Clonar el repositorio
 ```bash
-git clone https://github.com/usuario/little-horizons-erp.git
-cd little-horizons-erp
+git clone https://github.com/buitragosandovalj964-del/Sistema_Colegio_Little_Horizons.git
+cd Sistema_Colegio_Little_Horizons
 ```
 
 ### 7.2. Abrir el proyecto en NetBeans
-1. Abrir Apache NetBeans IDE.
+1. Abrir Apache NetBeans IDE 31.
 2. Ir a **File -> Open Project...**
 3. Seleccionar la carpeta del proyecto `PryLittleHorizonsERP` (identificada con el icono de Maven).
 4. Esperar a que NetBeans resuelva y descargue las dependencias de Maven.
 
 ### 7.3. Compilar
-En la terminal o mediante NetBeans (**Clean and Build** / `Shift + F11`):
+En NetBeans, usar **Clean and Build** (`Shift + F11`), o ejecutar desde una terminal:
 ```bash
 mvn clean compile
 ```
 
 ### 7.4. Ejecutar
-Mediante NetBeans (**Run Project** / `F6`), o por terminal:
+Mediante NetBeans (**Run Project** / `F6`), o por terminal si esta disponible el plugin de ejecucion de Maven:
 ```bash
 mvn exec:java
 ```
@@ -167,7 +169,7 @@ src/main/java/com/littlehorizons/erp/
 ## 10. Funcionalidades Principales por Modulo
 
 1. **Modulo 1: Gestion de Estudiantes y Acudientes:**
-   - Registro con validacion de documentos colombianos (TI, CC, CE, Pasaporte).
+   - Registro con validacion de documentos colombianos (TI, CC, CE, Pasaporte); cada estudiante debe quedar vinculado al menos a un acudiente.
    - Vinculacion muchos a muchos entre estudiantes y acudientes (con roles de contacto de emergencia y responsable financiero).
    - Consultas por documento, actualizacion, retiro logico y eliminacion.
 2. **Modulo 2: Gestion Academica:**
@@ -185,7 +187,7 @@ src/main/java/com/littlehorizons/erp/
    - Registro detallado de pagos con medios de pago formales y recibo consecutivo.
    - Consultas de extractos por estudiante y por acudiente.
    - Reporte de estudiantes con morosidad en mensualidades.
-   - **Generacion de Factura Electronica DIAN en PDF:** Genera archivo con resolucion de facturacion, calculo de hash CUFE SHA-256 y codigo QR simulado, guardado en `facturas/`.
+   - **Generacion de factura PDF de demostracion:** Genera un archivo con datos y elementos DIAN simulados, incluido el CUFE y un codigo QR escaneable con los datos principales de la factura, guardado en `facturas/`. No es una factura electronica transmitida ni validada por la DIAN.
 5. **Modulo 5: Gestion de Recursos (Biblioteca y Laboratorios):**
    - Inventario con codigo unico, categoria y ubicacion fisica.
    - Prestamos a estudiantes (maximo 3) y profesores (maximo 5) con plazo maximo de 30 dias.
@@ -202,10 +204,10 @@ src/main/java/com/littlehorizons/erp/
 ## 11. Manejo de Errores y Logs
 - **Estrategia de Excepciones:**
   - `ValidationException`: Excepcion de aplicacion controlada para comunicar mensajes claros en espanol al usuario cuando una regla de negocio se incumple.
-  - `ConsoleInput.CancelledException`: Permite al usuario escribir `cancelar` en cualquier campo de texto para abortar la operacion sin alterar datos.
+  - `ConsoleInput.CancelledException`: Permite escribir `cancelar` en los campos y confirmaciones. El registro de estudiantes pide primero los datos del acudiente y guarda estudiante, acudiente nuevo y vinculo en una sola transaccion.
   - `SQLException`: Capturada en la capa de controladores y registrada formalmente.
 - **Sistema de Logging:**
-  - Las excepciones tecnicas y fallas de base de datos son registradas automaticamente a traves de [`ErrorLogger`](file:///C:/Users/usuario/Documents/NetBeansProjects/PryLittleHorizonsERP/src/main/java/com/littlehorizons/erp/util/ErrorLogger.java).
+  - Las excepciones tecnicas y fallas de base de datos se registran a traves de [`ErrorLogger`](src/main/java/com/littlehorizons/erp/util/ErrorLogger.java).
   - Ubicacion del archivo: `error_log.txt` en la raiz del proyecto.
   - Cada entrada contiene fecha, hora exacta, contexto del error y la traza de ejecucion (`stack trace`).
 
@@ -218,7 +220,7 @@ Las evidencias de ejecucion por consola en Apache NetBeans IDE se encuentran doc
 
 ## 13. Problemas Conocidos y Limitaciones
 - La aplicacion esta disenada para consola de texto interactiva (CLI), por lo que requiere una terminal con soporte para codificacion UTF-8 (configurado de manera automatica en `Main.java`).
-- La generacion del codigo QR en la factura PDF incluye el bloque textual formal de verificacion y enlace directo al catalogo de consulta de la DIAN.
+- La factura PDF y su codigo QR son demostraciones academicas. El QR contiene datos de la factura, pero el documento no se transmite ni se valida ante la DIAN.
 
 ---
 
@@ -233,9 +235,3 @@ Las evidencias de ejecucion por consola en Apache NetBeans IDE se encuentran doc
 Proyecto educativo y academico desarrollado para evaluacion del ciclo formativo Campuslands 2024. Prohibida su distribucion comercial no autorizada.
 
 ---
-
-## 16. Contacto
-- **Institucion:** Colegio Internacional Little Horizons S.A.S.
-- **Soporte Tecnico:** `soporte@littlehorizons.edu.co`
-- **Ubicacion:** Carrera 45 # 128 - 20, Bogota D.C., Colombia
-

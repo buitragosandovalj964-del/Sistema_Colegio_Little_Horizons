@@ -31,6 +31,9 @@ public class GuardianDao {
     private static final String SELECT_BY_DOCUMENT_SQL =
             SELECT_BASE_SQL + " WHERE tipo_documento = ? AND numero_documento = ?";
 
+    private static final String SELECT_BY_DOCUMENT_NUMBER_SQL =
+            SELECT_BASE_SQL + " WHERE numero_documento = ?";
+
     private static final String INSERT_SQL =
             "INSERT INTO acudientes (tipo_documento, numero_documento, primer_nombre, "
             + "segundo_nombre, primer_apellido, segundo_apellido, parentesco, "
@@ -48,13 +51,16 @@ public class GuardianDao {
     private static final String DELETE_SQL = "DELETE FROM acudientes WHERE id_acudiente = ?";
 
     public void insert(Guardian guardian) throws SQLException {
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            insert(connection, guardian);
+        }
+    }
 
+    public void insert(Connection connection, Guardian guardian) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
             setGuardianParameters(statement, guardian);
             statement.executeUpdate();
-
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     guardian.setId(generatedKeys.getInt(1));
@@ -100,6 +106,17 @@ public class GuardianDao {
 
             statement.setString(1, documentType);
             statement.setString(2, documentNumber);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? Optional.of(mapRow(resultSet)) : Optional.empty();
+            }
+        }
+    }
+
+    public Optional<Guardian> findByDocumentNumber(String documentNumber) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     SELECT_BY_DOCUMENT_NUMBER_SQL)) {
+            statement.setString(1, documentNumber);
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next() ? Optional.of(mapRow(resultSet)) : Optional.empty();
             }

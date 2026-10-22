@@ -46,7 +46,7 @@ public class GuardianController {
         try {
             operation.run();
         } catch (ConsoleInput.CancelledException e) {
-            guardianView.showMessage("Operación cancelada. No se guardó ningún cambio.");
+            guardianView.showMessage("Operación cancelada. Los cambios completados anteriormente se conservan.");
         } catch (ValidationException e) {
             guardianView.showError(e.getMessage());
         } catch (SQLException e) {

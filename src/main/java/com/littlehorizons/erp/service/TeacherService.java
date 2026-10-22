@@ -34,10 +34,9 @@ public class TeacherService {
             teacher.setStatus(STATUS_ACTIVE);
         }
         validate(teacher);
-        if (teacherDao.findByDocument(teacher.getDocumentType(),
-                teacher.getDocumentNumber()).isPresent()) {
-            throw new ValidationException("Ya existe un profesor con el documento "
-                    + teacher.getDocumentType() + " " + teacher.getDocumentNumber() + ".");
+        if (teacherDao.findByDocumentNumber(teacher.getDocumentNumber()).isPresent()) {
+            throw new ValidationException("Ya existe un profesor con el número de documento "
+                    + teacher.getDocumentNumber() + ".");
         }
         if (teacherDao.findByEmail(teacher.getEmail()).isPresent()) {
             throw new ValidationException(
@@ -52,11 +51,11 @@ public class TeacherService {
                     "El profesor no tiene id, por lo que no se puede actualizar.");
         }
         validate(teacher);
-        Optional<Teacher> sameDocument = teacherDao.findByDocument(
-                teacher.getDocumentType(), teacher.getDocumentNumber());
+        Optional<Teacher> sameDocument = teacherDao.findByDocumentNumber(
+                teacher.getDocumentNumber());
         if (sameDocument.isPresent() && !sameDocument.get().getId().equals(teacher.getId())) {
-            throw new ValidationException("Otro profesor ya usa el documento "
-                    + teacher.getDocumentType() + " " + teacher.getDocumentNumber() + ".");
+            throw new ValidationException("Otro profesor ya usa el número de documento "
+                    + teacher.getDocumentNumber() + ".");
         }
         Optional<Teacher> sameEmail = teacherDao.findByEmail(teacher.getEmail());
         if (sameEmail.isPresent() && !sameEmail.get().getId().equals(teacher.getId())) {

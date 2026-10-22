@@ -51,7 +51,7 @@ public class TeacherController {
         try {
             operation.run();
         } catch (ConsoleInput.CancelledException e) {
-            teacherView.showMessage("Operación cancelada. No se guardó ningún cambio.");
+            teacherView.showMessage("Operación cancelada. Los cambios completados anteriormente se conservan.");
         } catch (ValidationException e) {
             teacherView.showError(e.getMessage());
         } catch (SQLException e) {

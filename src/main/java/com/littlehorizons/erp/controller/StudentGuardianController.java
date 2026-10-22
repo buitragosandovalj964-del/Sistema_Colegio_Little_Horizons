@@ -20,6 +20,9 @@ import java.util.Set;
  */
 public class StudentGuardianController {
 
+    public record GuardianLinkPlan(Guardian guardian, boolean registerGuardian,
+            boolean primary, boolean emergencyContact) { }
+
     private final StudentGuardianService linkService;
     private final StudentService studentService;
     private final GuardianService guardianService;
@@ -60,7 +63,8 @@ public class StudentGuardianController {
         try {
             operation.run();
         } catch (ConsoleInput.CancelledException e) {
-            view.showMessage("Operación cancelada. No se guardó ningún cambio.");
+            view.showMessage(
+                    "Operación actual cancelada. Los cambios completados anteriormente se conservan.");
         } catch (ValidationException e) {
             view.showError(e.getMessage());
         } catch (SQLException e) {
@@ -94,6 +98,23 @@ public class StudentGuardianController {
         } while (view.confirm("¿Desea vincular otro acudiente a este estudiante?"));
     }
 
+    public GuardianLinkPlan prepareFirstGuardianLink() throws ValidationException, SQLException {
+        Guardian guardian = prepareGuardian();
+        boolean registerGuardian = guardian.getId() == null;
+        boolean emergencyContact = view.askIsEmergencyContact();
+        return new GuardianLinkPlan(guardian, registerGuardian, true, emergencyContact);
+    }
+
+    public void registerStudentWithFirstGuardian(Student student, GuardianLinkPlan plan)
+            throws ValidationException, SQLException {
+        studentService.validateForRegistration(student);
+        if (plan.registerGuardian()) {
+            guardianService.validateForRegistration(plan.guardian());
+        }
+        linkService.registerStudentWithGuardian(student, plan.guardian(),
+                plan.registerGuardian(), plan.primary(), plan.emergencyContact());
+    }
+
     private void showGuardiansOfAskedStudent() throws ValidationException, SQLException {
         showGuardiansOf(askForStudent());
     }
@@ -103,10 +124,20 @@ public class StudentGuardianController {
     }
 
     private void linkOneGuardian(Student student) throws ValidationException, SQLException {
-        Guardian guardian = findOrRegisterGuardian();
+        Guardian guardian = prepareGuardian();
+        boolean registerGuardian = guardian.getId() == null;
         boolean primary = view.askIsPrimary();
         boolean emergencyContact = view.askIsEmergencyContact();
-        linkService.linkGuardian(student, guardian, primary, emergencyContact);
+        GuardianLinkPlan plan = new GuardianLinkPlan(guardian, registerGuardian,
+                primary, emergencyContact);
+        if (plan.registerGuardian()) {
+            guardianService.validateForRegistration(plan.guardian());
+            linkService.registerNewGuardianLink(student, plan.guardian(),
+                    plan.primary(), plan.emergencyContact());
+        } else {
+            linkService.linkGuardian(student, plan.guardian(),
+                    plan.primary(), plan.emergencyContact());
+        }
         view.showMessage(guardian.getFullName() + " quedó vinculado(a) a "
                 + student.getFullName() + ".");
         showGuardiansOf(student);
@@ -153,10 +184,10 @@ public class StudentGuardianController {
                 () -> new ValidationException("No se encontró ningún acudiente con ese documento."));
     }
 
-    private Guardian findOrRegisterGuardian() throws ValidationException, SQLException {
+    private Guardian prepareGuardian() throws ValidationException, SQLException {
         StudentGuardianView.DocumentId documentId = view.askGuardianDocument();
         Optional<Guardian> existing =
-                guardianService.findByDocument(documentId.type(), documentId.number());
+                guardianService.findByDocumentNumber(documentId.number());
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -164,8 +195,6 @@ public class StudentGuardianController {
                 + "¿Desea registrarlo ahora?")) {
             throw new ValidationException("No se vinculó ningún acudiente.");
         }
-        Guardian guardian = guardianView.askNewGuardian(documentId.type(), documentId.number());
-        guardianService.registerGuardian(guardian);
-        return guardian;
+        return guardianView.askNewGuardian(documentId.type(), documentId.number());
     }
 }

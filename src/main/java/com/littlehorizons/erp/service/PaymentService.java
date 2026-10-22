@@ -31,6 +31,7 @@ public class PaymentService {
     private static final int MAX_NOTES_LENGTH = 500;
     private static final int RECEIPT_MAX_LENGTH = 50;
     private static final String STUDENT_ACTIVE = "Activo";
+    private static final BigDecimal MAX_MONEY_AMOUNT = new BigDecimal("99999999.99");
 
     private final PaymentDao paymentDao;
     private final PaymentConceptDao conceptDao;
@@ -106,9 +107,7 @@ public class PaymentService {
         if (!concept.isActive()) {
             throw new ValidationException("El concepto " + concept.getName() + " esta inactivo.");
         }
-        if (amountPaid == null || amountPaid.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ValidationException("El monto pagado debe ser mayor a cero.");
-        }
+        validateMoneyAmount(amountPaid, "El monto pagado");
         if (paymentDate == null) {
             throw new ValidationException("La fecha de pago es obligatoria.");
         }
@@ -192,8 +191,17 @@ public class PaymentService {
         if (concept.getName().length() > MAX_NAME_LENGTH) {
             throw new ValidationException("El nombre debe tener maximo " + MAX_NAME_LENGTH + " caracteres.");
         }
-        if (concept.getBaseAmount() == null || concept.getBaseAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ValidationException("El monto base debe ser mayor a cero.");
+        validateMoneyAmount(concept.getBaseAmount(), "El monto base");
+    }
+
+    private void validateMoneyAmount(BigDecimal amount, String label) throws ValidationException {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException(label + " debe ser mayor a cero.");
+        }
+        if (amount.compareTo(MAX_MONEY_AMOUNT) > 0
+                || amount.stripTrailingZeros().scale() > 2) {
+            throw new ValidationException(label
+                    + " no puede superar $99.999.999,99 ni tener más de dos decimales.");
         }
     }
 

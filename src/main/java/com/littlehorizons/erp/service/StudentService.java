@@ -39,16 +39,20 @@ public class StudentService {
     }
 
     public void registerStudent(Student student) throws ValidationException, SQLException {
+        validateForRegistration(student);
+        studentDao.insert(student);
+    }
+
+    public void validateForRegistration(Student student)
+            throws ValidationException, SQLException {
         if (student.getStatus() == null || student.getStatus().isBlank()) {
             student.setStatus(STATUS_ACTIVE);
         }
         validate(student);
-        if (studentDao.findByDocument(student.getDocumentType(),
-                student.getDocumentNumber()).isPresent()) {
-            throw new ValidationException("Ya existe un estudiante con el documento "
-                    + student.getDocumentType() + " " + student.getDocumentNumber() + ".");
+        if (studentDao.findByDocumentNumber(student.getDocumentNumber()).isPresent()) {
+            throw new ValidationException("Ya existe un estudiante con el número de documento "
+                    + student.getDocumentNumber() + ".");
         }
-        studentDao.insert(student);
     }
 
     public void updateStudent(Student student) throws ValidationException, SQLException {
@@ -57,11 +61,11 @@ public class StudentService {
                     "El estudiante no tiene id, por lo que no se puede actualizar.");
         }
         validate(student);
-        Optional<Student> sameDocument = studentDao.findByDocument(
-                student.getDocumentType(), student.getDocumentNumber());
+        Optional<Student> sameDocument = studentDao.findByDocumentNumber(
+                student.getDocumentNumber());
         if (sameDocument.isPresent() && !sameDocument.get().getId().equals(student.getId())) {
-            throw new ValidationException("Otro estudiante ya usa el documento "
-                    + student.getDocumentType() + " " + student.getDocumentNumber() + ".");
+            throw new ValidationException("Otro estudiante ya usa el número de documento "
+                    + student.getDocumentNumber() + ".");
         }
         if (!studentDao.update(student)) {
             throw new ValidationException(
@@ -141,6 +145,9 @@ public class StudentService {
         }
         if (student.getAdmissionDate() == null) {
             throw new ValidationException("La fecha de ingreso es obligatoria.");
+        }
+        if (student.getAdmissionDate().isAfter(LocalDate.now())) {
+            throw new ValidationException("La fecha de ingreso no puede ser futura.");
         }
         if (student.getAdmissionDate().isBefore(student.getBirthDate())) {
             throw new ValidationException(

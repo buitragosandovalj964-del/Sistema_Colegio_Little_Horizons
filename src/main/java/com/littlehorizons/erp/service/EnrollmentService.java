@@ -7,6 +7,8 @@ import com.littlehorizons.erp.dao.SubjectEnrollmentDao;
 import com.littlehorizons.erp.model.Enrollment;
 import com.littlehorizons.erp.model.Grade;
 import com.littlehorizons.erp.model.Student;
+import com.littlehorizons.erp.util.DatabaseConnection;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -99,15 +101,38 @@ public class EnrollmentService {
         FieldValidator.validateMaxLength(notes, "Las observaciones", MAX_NOTES_LENGTH);
 
         LocalDate withdrawalDate = STATUS_WITHDRAWN.equals(newStatus) ? LocalDate.now() : null;
-        enrollmentDao.updateStatus(enrollmentId, newStatus, withdrawalDate, notes);
-        inscriptionDao.updateStatusForYear(student.getId(), enrollment.getAcademicYear(),
-                newStatus);
-
         boolean finishedLastGrade = STATUS_COMPLETED.equals(newStatus)
                 && enrollment.getGrade().getNumericLevel() == LAST_GRADE_LEVEL;
-        if (finishedLastGrade) {
-            student.setStatus(STUDENT_GRADUATED);
-            studentDao.update(student);
+        String previousStudentStatus = student.getStatus();
+
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                if (!enrollmentDao.updateStatus(connection, enrollmentId, newStatus,
+                        withdrawalDate, notes)) {
+                    throw new SQLException("La matrícula dejó de existir durante la operación.");
+                }
+                inscriptionDao.updateStatusForYear(connection, student.getId(),
+                        enrollment.getAcademicYear(), newStatus);
+                if (finishedLastGrade) {
+                    student.setStatus(STUDENT_GRADUATED);
+                    if (!studentDao.update(connection, student)) {
+                        throw new SQLException(
+                                "No se pudo actualizar el estado del estudiante graduado.");
+                    }
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackError) {
+                    e.addSuppressed(rollbackError);
+                }
+                if (finishedLastGrade) {
+                    student.setStatus(previousStudentStatus);
+                }
+                throw e;
+            }
         }
     }
 
