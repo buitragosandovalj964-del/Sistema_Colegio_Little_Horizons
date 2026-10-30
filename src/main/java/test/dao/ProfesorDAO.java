@@ -1,12 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package test.dao;
 
 import com.littlehorizons.erp.util.DatabaseConnection;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,31 +10,13 @@ import java.util.List;
 import test.model.MateriaAsignada;
 import test.model.Profesor;
 
-/**
- * Acceso a datos para profesores y asignaciones de materias.
- */
 public class ProfesorDAO {
 
-    /**
-     * Reutiliza la conexión del proyecto mediante DatabaseConnection.
-     * Si no encuentra el archivo db.properties, usa la conexión directa por defecto.
-     */
     private Connection obtenerConexion() throws SQLException {
-        try {
-            return DatabaseConnection.getConnection();
-        } catch (Exception e) {
-            String url = "jdbc:mysql://localhost:3306/erp_little_horizons?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-            return DriverManager.getConnection(url, "root", "");
-        }
+        return DatabaseConnection.getConnection();
     }
 
-    /**
-     * Busca un profesor por su ID.
-     * 
-     * @param idProfesor ID del profesor a buscar.
-     * @return El profesor encontrado, o null si no existe.
-     */
-    public Profesor buscarPorId(int idProfesor) {
+    public Profesor buscarPorId(int idProfesor) throws SQLException {
         String sql = "SELECT id_profesor, tipo_documento, numero_documento, "
                 + "primer_nombre, segundo_nombre, primer_apellido, segundo_apellido "
                 + "FROM profesores WHERE id_profesor = ?";
@@ -61,19 +38,11 @@ public class ProfesorDAO {
                     );
                 }
             }
-        } catch (SQLException e) {
-            System.out.println("Error al buscar profesor: " + e.getMessage());
         }
         return null;
     }
 
-    /**
-     * Obtiene la lista de materias que tiene asignadas el profesor en el año 2025.
-     * 
-     * @param idProfesor ID del profesor.
-     * @return Lista de materias asignadas en 2025.
-     */
-    public List<MateriaAsignada> listarMaterias2025(int idProfesor) {
+    public List<MateriaAsignada> listarMaterias2025(int idProfesor) throws SQLException {
         List<MateriaAsignada> lista = new ArrayList<>();
         String sql = "SELECT m.codigo_materia, m.nombre_materia, g.nombre_grado "
                 + "FROM asignaciones_profesor ap "
@@ -96,8 +65,6 @@ public class ProfesorDAO {
                     lista.add(materia);
                 }
             }
-        } catch (SQLException e) {
-            System.out.println("Error al listar materias: " + e.getMessage());
         }
         return lista;
     }

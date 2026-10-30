@@ -1,12 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package test.model;
 
-/**
- * Clase que representa a un profesor para el reporte de exportación.
- */
 public class Profesor {
 
     private int idProfesor;
@@ -31,10 +24,6 @@ public class Profesor {
         this.segundoApellido = segundoApellido;
     }
 
-    /**
-     * Construye el nombre completo.
-     * Si no tiene segundo nombre o segundo apellido, se omite sin dejar dos espacios seguidos.
-     */
     public String getNombreCompleto() {
         String nombre = (primerNombre != null) ? primerNombre.trim() : "";
 
@@ -50,9 +39,6 @@ public class Profesor {
         return nombre;
     }
 
-    /**
-     * Retorna el tipo de documento, un espacio y el número (ej: CC 80123456).
-     */
     public String getDocumentoCompleto() {
         String tipo = (tipoDocumento != null) ? tipoDocumento.trim() : "";
         String num = (numeroDocumento != null) ? numeroDocumento.trim() : "";
